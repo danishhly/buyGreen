@@ -19,4 +19,10 @@ public class CustomerServiceImplementation implements CustomerService {
         repo.save(customer);
         return "success";
     }
+
+    @Override
+    public Customers getCustomerByEmail(String email) {
+        return repo.findByEmail(email);
+
+    }
 }
