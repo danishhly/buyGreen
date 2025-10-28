@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
+
 function Login() {
  const[formData, setFormData] = useState({
   email: "",
@@ -35,9 +36,9 @@ function Login() {
     // redirect after login
 
     if(response.data.role === "admin") {
-      navigate("/admin-dashboard");
+      navigate("/AdminDashboard");
     } else {
-      navigate("/Home");
+      navigate("/CustomerHome");
     }
   } catch (error) {
     setMessage(error.response?.data?.message || "Login failed ");
