@@ -37,6 +37,11 @@ const addProduct = async (e) => {
     fetchProducts();
 };
 
+const updateProduct = async (id) => {
+    await axios.post(`http://localhost:8080/products/update/${id}`);
+    fetchProducts();
+
+};
 const deleteProduct = async (id) => {
     await axios.delete(`http://localhost:8080/products/delete/${id}`);
     fetchProducts();
@@ -66,6 +71,7 @@ return (
             <p>{p.description}</p>
             <p className="text-green-700 font-semibold">₹{p.price}</p>
             <button onClick={() => deleteProduct(p.id)} className="bg-red-500 text-white px-3 py-1 mt-2 rounded hover:bg-red-600">Delete</button>
+            <button onClick={() => updateProduct(p.id)} className="bg-blue-500 text-white px-4 py-1 mt-2 rounded hover:bg-blue-600">Update</button>
           </div>
         ))}
 </div>
