@@ -17,8 +17,8 @@ const CustomerHome = () => {
       <header className="bg-white shadow-sm">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
-            <div className="md:flex md:items-center md:gap-12">
-              <a className="block text-green-600" href="#">
+            <div className="shrink-0">
+              <a className="block text-green-700" href="#">
                 <span className="sr-only">Home</span>
                 {/* SVG Logo */}
                 <svg className="h-8" viewBox="0 0 28 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -34,21 +34,16 @@ const CustomerHome = () => {
                   <li><a className="text-gray-500 transition hover:text-gray-500/75" href="#">Home</a></li>
                   <li><a className="text-gray-500 transition hover:text-gray-500/75" href="#">Cart</a></li>
                   <li><a className="text-gray-500 transition hover:text-gray-500/75" href="#">Profile</a></li>
-                  <li><a className="text-gray-500 transition hover:text-gray-500/75" href="#">Logout</a></li>
                 </ul>
               </nav>
             </div>
 
             <div className="flex items-center gap-4">
               <div className="sm:flex sm:gap-4">
-                <a className="rounded-md bg-green-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm" href="#">
-                  Login
+                <a className="rounded-md bg-green-700 px-5 py-2.5 text-sm font-medium text-white shadow-sm" href="#">
+                  Logout
                 </a>
-                <div className="hidden sm:flex">
-                  <a className="rounded-md bg-gray-100 px-5 py-2.5 text-sm font-medium text-green-600" href="#">
-                    Signup
-                  </a>
-                </div>
+               
               </div>
 
               <div className="block md:hidden">
@@ -71,8 +66,8 @@ const CustomerHome = () => {
             <div className="p-4">
               <h3 className="text-lg font-semibold">{p.name}</h3>
               <p className="desc text-gray-600 mt-1 text-sm">{p.description}</p>
-              <p className="price text-green-600 font-bold mt-2 text-xl">{p.price}</p>
-              <button className="w-full mt-4 bg-green-600 text-white py-2 rounded-md hover:bg-green-700 transition-colors">
+              <p className="price text-green-700 font-bold mt-2 text-xl">{p.price}</p>
+              <button className="w-full mt-4 bg-green-700 text-white py-2 rounded-md hover:bg-green-800 transition-colors">
                 Add to Cart
               </button>
             </div>
