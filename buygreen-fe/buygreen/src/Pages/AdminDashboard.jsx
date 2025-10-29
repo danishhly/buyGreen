@@ -1,5 +1,6 @@
 import React, {useState, useEffect} from "react";
 import axios from "axios";
+import "./CustomerHome.css"
 
 
 function AdminDashboard() {
@@ -33,7 +34,7 @@ const addProduct = async (e) => {
         alert("Please fill in atleast the Name and price fields.")
     }
     await axios.post("http://localhost:8080/products/add", formData);
-    setFormData({name: "", description: "", price: "", imageUrl: "", category: " ", StockQuantity: " "});
+    setFormData({name: "", description: "", price: "", imageUrl: "", category: "", StockQuantity: "" });
     fetchProducts();
 };
 
