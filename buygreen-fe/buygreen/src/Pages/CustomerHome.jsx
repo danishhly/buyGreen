@@ -1,19 +1,41 @@
 import React, { useEffect, useState } from 'react';
 import axios from "axios";
 
+// A simple, self-contained spinner component
+const LoadingSpinner = () => (
+  <div className="flex justify-center items-center h-64">
+    <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-green-700"></div>
+  </div>
+);
+
 const CustomerHome = () => {
   const [products, setProducts] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  // 1. Add state to store the customer's name
+  const [customerName, setCustomerName] = useState('');
 
-  // This logic is from your first file. It fetches product data when the component mounts.
   useEffect(() => {
+    // --- Fetch Products ---
     axios.get("http://localhost:8080/products/all")
-      .then((res) => setProducts(res.data))
-      .catch((err) => console.error("Error fetching products:", err));
-  }, []);
+      .then((res) => {
+        setProducts(res.data);
+      })
+      .catch((err) => {
+        console.error("Error fetching products:", err);
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+
+    // 2. Get the logged-in user's name from localStorage
+    const name = localStorage.getItem('customerName');
+    if (name) {
+      setCustomerName(name);
+    }
+  }, []); // This effect runs once when the component loads
 
   return (
     <div className="customer-home">
-      {/* This header is from your second file, converted to JSX and integrated. */}
       <header className="bg-white shadow-sm">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
@@ -26,26 +48,26 @@ const CustomerHome = () => {
                 </svg>
               </a>
             </div>
-
             <div className="hidden md:block">
               <nav aria-label="Global">
                 <ul className="flex items-center gap-6 text-sm">
-                  {/* I've used the links from your original component for relevance */}
                   <li><a className="text-gray-500 transition hover:text-gray-500/75" href="#">Home</a></li>
                   <li><a className="text-gray-500 transition hover:text-gray-500/75" href="#">Cart</a></li>
-                  <li><a className="text-gray-500 transition hover:text-gray-500/75" href="#">Profile</a></li>
+                  {/* 3. Display the customer's name if it exists */}
+                  <li>
+                    <a className="text-gray-500 transition hover:text-gray-500/75" href="#">
+                      {customerName ? `Hi, ${customerName}` : 'Profile'}
+                    </a>
+                  </li>
                 </ul>
               </nav>
             </div>
-
             <div className="flex items-center gap-4">
               <div className="sm:flex sm:gap-4">
                 <a className="rounded-md bg-green-700 px-5 py-2.5 text-sm font-medium text-white shadow-sm" href="#">
                   Logout
                 </a>
-               
               </div>
-
               <div className="block md:hidden">
                 <button className="rounded-sm bg-gray-100 p-2 text-gray-600 transition hover:text-gray-600/75">
                   <svg xmlns="http://www.w3.org/2000/svg" className="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
@@ -58,22 +80,27 @@ const CustomerHome = () => {
         </div>
       </header>
 
-      {/* This is the product display grid from your first file. It remains unchanged. */}
-      <div className="product-grid p-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        {products.map((p) => (
-          <div key={p.id} className="product-card border rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-shadow">
-            <img src={p.imageUrl} alt={p.name} className="w-full h-48 object-cover" />
-            <div className="p-4">
-              <h3 className="text-lg font-semibold">{p.name}</h3>
-              <p className="desc text-gray-600 mt-1 text-sm">{p.description}</p>
-              <p className="price text-green-700 font-bold mt-2 text-xl">{p.price}</p>
-              <button className="w-full mt-4 bg-green-700 text-white py-2 rounded-md hover:bg-green-800 transition-colors">
-                Add to Cart
-              </button>
-            </div>
+      <main className="p-8">
+        {isLoading ? (
+          <LoadingSpinner />
+        ) : (
+          <div className="product-grid grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            {products.map((p) => (
+              <div key={p.id} className="product-card border rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-shadow">
+                <img src={p.imageUrl} alt={p.name} className="w-full h-48 object-cover" />
+                <div className="p-4">
+                  <h3 className="text-lg font-semibold">{p.name}</h3>
+                  <p className="desc text-gray-600 mt-1 text-sm">{p.description}</p>
+                  <p className="price text-green-700 font-bold mt-2 text-xl">{p.price}</p>
+                  <button className="w-full mt-4 bg-green-700 text-white py-2 rounded-md hover:bg-green-800 transition-colors">
+                    Add to Cart
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
+        )}
+      </main>
     </div>
   );
 };
