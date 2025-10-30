@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from "axios";
 
 // A simple, self-contained spinner component
@@ -12,7 +13,8 @@ const CustomerHome = () => {
   const [products, setProducts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   // 1. Add state to store the customer's name
-  const [customerName, setCustomerName] = useState('');
+  const [customerName, setCustomer] = useState('');
+   const navigate = useNavigate();
 
   useEffect(() => {
     // --- Fetch Products ---
@@ -28,11 +30,37 @@ const CustomerHome = () => {
       });
 
     // 2. Get the logged-in user's name from localStorage
-    const name = localStorage.getItem('customerName');
-    if (name) {
-      setCustomerName(name);
+ const storedCustomer = localStorage.getItem('customer');
+    if (storedCustomer) {
+      setCustomer(JSON.parse(storedCustomer));
     }
-  }, []); // This effect runs once when the component loads
+  }, []);
+
+  const handleAddToCart = (product) => {
+    if (!customerName) {
+      alert("Please login first");
+      // Optional: redirect to login page
+       navigate('/login'); 
+      return;
+    }
+
+    axios.post("http://localhost:8080/cart/add", {
+      customerId: customerName.id,
+      productId: product.id,
+      productName: product.name,
+      price: product.price,
+      quantity: 1
+    })
+    .then(() => alert(`${product.name} added to cart!`))
+    .catch(err => console.error("Error adding to cart: ", err));
+  };
+
+  // 3. Add a logout handler
+  const handleLogout = () => {
+    localStorage.removeItem('customer'); // Clear the customer data
+    setCustomer(null); // Update state
+    navigate('/login'); // Redirect to login page
+  };
 
   return (
     <div className="customer-home">
@@ -64,9 +92,9 @@ const CustomerHome = () => {
             </div>
             <div className="flex items-center gap-4">
               <div className="sm:flex sm:gap-4">
-                <a className="rounded-md bg-green-700 px-5 py-2.5 text-sm font-medium text-white shadow-sm" href="#">
+                <button onClick={handleLogout}className="rounded-md bg-green-700 px-5 py-2.5 text-sm font-medium text-white shadow-sm" href="#">
                   Logout
-                </a>
+                </button>
               </div>
               <div className="block md:hidden">
                 <button className="rounded-sm bg-gray-100 p-2 text-gray-600 transition hover:text-gray-600/75">
@@ -92,7 +120,7 @@ const CustomerHome = () => {
                   <h3 className="text-lg font-semibold">{p.name}</h3>
                   <p className="desc text-gray-600 mt-1 text-sm">{p.description}</p>
                   <p className="price text-green-700 font-bold mt-2 text-xl">{p.price}</p>
-                  <button className="w-full mt-4 bg-green-700 text-white py-2 rounded-md hover:bg-green-800 transition-colors">
+                  <button onClick={() => handleAddToCart(p)} className="w-full mt-4 bg-green-700 text-white py-2 rounded-md hover:bg-green-800 transition-colors">
                     Add to Cart
                   </button>
                 </div>
