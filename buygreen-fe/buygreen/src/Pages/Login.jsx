@@ -10,7 +10,7 @@ function Login() {
 
   const [message, setMessage] = useState("");
   // 1. Add loading state
-  const [isLoading, setIsLoading] = useState(false); 
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -26,41 +26,58 @@ function Login() {
     setMessage(""); // Clear previous messages
 
     try {
+      const payload = {
+        ...formData
+      };
       const response = await axios.post(
         "http://localhost:8080/login",
-        formData,
+        payload,
         {
           headers: {
             "Content-Type": "application/json"
           }
         }
       );
-
-      setMessage(response.data.message);
+      const data = response?.data || {};
+      setMessage(data.message);
       console.log("Login Success", response.data);
+
+      const customer = {
+        id: response.data.id,
+        name: response.data.name,
+        email: response.data.email,
+        role: response.data.role
+      };
 
       // 3. Save user data to localStorage
       // This makes the user's name and role available across your entire app
-      if (response.data.name) {
-        localStorage.setItem('customerName', response.data.name);
+      if (data.id !== undefined && data.id !== null) {
+        localStorage.setItem('customerId', String(data.id));
       }
-      if (response.data.role) {
-        localStorage.setItem('userRole', response.data.role);
+      if (customer.name) {
+        localStorage.setItem('customerName', customer.name);
       }
+
+      if (customer.role) {
+        localStorage.setItem('Role', customer.role);
+      }
+
+      localStorage.setItem('customer', JSON.stringify(customer));
+
       // You should also store the authentication token here if your API sends one
-      // if (response.data.token) {
+      //  if (data.token) {
       //   localStorage.setItem('authToken', response.data.token);
       // }
-      
+
       // Redirect after login
-      if (response.data.role === "admin") {
+      if (data.role === "admin") {
         navigate("/AdminDashboard");
       } else {
         navigate("/CustomerHome");
       }
     } catch (error) {
-      setMessage(error.response?.data?.message || "Login failed");
       console.error(error.response);
+      setMessage(error.response?.data?.message || "Login failed");
     } finally {
       setIsLoading(false); // 4. Set loading to false after API call completes
     }
@@ -94,7 +111,7 @@ function Login() {
             className="bg-green-600 hover:bg-green-700 text-white p-2 rounded-md disabled:bg-green-300"
             disabled={isLoading} // 5. Disable button while loading
           >
-            {isLoading ? 'Logging in...' : 'Login'} 
+            {isLoading ? 'Logging in...' : 'Login'}
           </button>
         </form>
         {message && <p className="mt-4 text-center text-red-600">{message}</p>}

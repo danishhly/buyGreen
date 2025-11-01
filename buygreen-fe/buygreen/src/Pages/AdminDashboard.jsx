@@ -10,7 +10,7 @@ function AdminDashboard() {
     price: "",
     imageUrl: "",
     category: "",
-    StockQuantity: "",
+    stockQuantity: "",
  });
 
 useEffect(() => {
@@ -38,7 +38,7 @@ const addProduct = async (e) => {
 };
 
 const updateProduct = async (id) => {
-    await axios.post(`http://localhost:8080/products/update/${id}`);
+    await axios.post(`http://localhost:8080/products/update/${id}`, formData);
     fetchProducts();
 
 };

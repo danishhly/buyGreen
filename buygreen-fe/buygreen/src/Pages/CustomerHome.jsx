@@ -16,7 +16,7 @@ const CustomerHome = () => {
     const [isLoadingProducts, setIsLoadingProducts] = useState(true);
     const [customer, setCustomer] = useState(null);
     const navigate = useNavigate();
-    
+
     // 2. Get the location
     const location = useLocation();
     const { addToCart } = useCart();
@@ -29,12 +29,34 @@ const CustomerHome = () => {
             .catch((err) => console.error("Error fetching products:", err))
             .finally(() => setIsLoadingProducts(false));
 
+        const parseStoredValue = (value) => {
+            if (value === null || value === undefined) return null;
+            try {
+                return JSON.parse(value);
+            } catch (err) {
+                return value;
+            }
+        };
+
         // Check for customer
         const storedCustomer = localStorage.getItem('customer');
         if (storedCustomer) {
-            setCustomer(JSON.parse(storedCustomer));
-        } else {
-            setCustomer(null);
+            try {
+                const parsedCustomer = JSON.parse(storedCustomer);
+                setCustomer(parsedCustomer);
+                return;
+            } catch (err) {
+                console.error('Failed to parse stored customer', err);
+            }
+        }
+
+        const customerName = parseStoredValue(localStorage.getItem('customerName'));
+        const userRole = parseStoredValue(localStorage.getItem('Role'));
+        if (customerName && userRole) {
+            setCustomer({
+                name: customerName,
+                role: userRole
+            });
         }
     }, [location]); // 4. Add 'location' as a dependency
 

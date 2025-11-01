@@ -17,14 +17,22 @@ const Navbar = () => {
     useEffect(() => {
         const storedCustomer = localStorage.getItem('customer');
         if (storedCustomer) {
-            setCustomer(JSON.parse(storedCustomer));
+            try {
+                setCustomer(JSON.parse(storedCustomer));
+            } catch (err) {
+                console.error('Failed to parse stored customer', err);
+                setCustomer(null);
+            }
         } else {
             setCustomer(null);
         }
-}, [location]); // 4. Add 'location' as a dependency
+    }, [location]); // 4. Add 'location' as a dependency
 
-const handleLogout = () => {
+    const handleLogout = () => {
         localStorage.removeItem('customer');
+        localStorage.removeItem('customerId');
+        localStorage.removeItem('customerName');
+        localStorage.removeItem('Role');
         setCustomer(null);
         navigate('/login');
     };
