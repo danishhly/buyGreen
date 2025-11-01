@@ -123,7 +123,54 @@ export const CartProvider = ({ children }) => {
 
     const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 
-    const value = { cartItems, cartCount, addToCart, decrementFromCart, fetchCart, isLoading, error };
+    const createPaymentOrder = async (amount) => {
+        const normalizedAmount = Number(amount.toFixed(2));
+        const response = await axios.post("http://localhost:8080/payments/order", {
+            amount: normalizedAmount,
+            currency: "INR",
+            receipt: `buygreen_${Date.now()}`
+        });
+        return response.data;
+    };
+
+    const placeOrder = async () => {
+        const customer = getCustomer();
+        if (!customer) throw new Error("User is not logged in.");
+
+        const total = cartItems.reduce((sum, item) => {
+            return sum + (item.price * item.quantity);
+        }, 0);
+
+        const payload = {
+            customerId: Number(customer.id),
+            totalAmount: total,
+            items: cartItems.map(item => ({
+                productId: item.productId,
+                productName: item.productName,
+                price: item.price,
+                quantity: item.quantity
+            }))
+        };
+
+        const response = await axios.post("http://localhost:8080/orders/create", payload, {
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        await fetchCart();
+        return response.data;
+    };
+
+    const fetchOrders = async () => {
+        const customer = getCustomer();
+        if (!customer) throw new Error("User is not logged in.");
+
+        const response = await axios.get(`http://localhost:8080/orders/customer/${customer.id}`);
+        return response.data;
+    }
+
+    const value = { cartItems, cartCount, addToCart, decrementFromCart, fetchCart, createPaymentOrder, placeOrder, fetchOrders, isLoading, error };
 
     return (
         <CartContext.Provider value={value}>

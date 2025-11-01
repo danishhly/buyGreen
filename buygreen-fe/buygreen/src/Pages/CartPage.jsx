@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useCart } from '../Hooks/UseCart';
-import { Link } from 'react-router-dom'; // Import Link
+import { Link, useNavigate } from 'react-router-dom';
 
 const CartPage = () => {
-    const { cartItems, addToCart, decrementFromCart } = useCart();
+    const { cartItems, addToCart, decrementFromCart, createPaymentOrder, placeOrder, isLoading } = useCart();
+    const navigate = useNavigate();
+    const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
     const handleDecrease = async (item) => {
         try {
@@ -24,6 +26,71 @@ const CartPage = () => {
         } catch (err) {
             console.error('Failed to increase quantity', err);
             alert('Could not increase item quantity. Please try again.');
+        }
+    };
+
+    useEffect(() => {
+        if (!window.Razorpay) {
+            const script = document.createElement('script');
+            script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+            script.async = true;
+            document.body.appendChild(script);
+        }
+    }, []);
+
+    const handleCheckout = async () => {
+        if (cartItems.length === 0) {
+            alert('Add items to cart before checking out.');
+            return;
+        }
+
+        try {
+            setIsProcessingPayment(true);
+
+            const totalAmount = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            const paymentOrder = await createPaymentOrder(totalAmount);
+
+            const razorpayKey = import.meta.env.VITE_RAZORPAY_KEY_ID;
+            const canUseRazorpay = Boolean(razorpayKey) && window.Razorpay && !paymentOrder.mock;
+
+            if (!canUseRazorpay) {
+                const order = await placeOrder();
+                navigate('/order-success', { state: { order } });
+                return;
+            }
+            const options = {
+                key: razorpayKey,
+                amount: paymentOrder.amount,
+                currency: paymentOrder.currency,
+                name: 'BuyGreen',
+                description: 'Order Payment',
+                order_id: paymentOrder.id,
+                handler: async () => {
+                    try {
+                        const order = await placeOrder();
+                        navigate('/order-success', { state: { order } });
+                    } catch (err) {
+                        console.error('Failed to create order after payment', err);
+                        alert('Something went wrong finalizing your order.');
+                    }
+                },
+                theme: {
+                    color: '#15803d'
+                }
+            };
+
+            const razorpayInstance = new window.Razorpay(options);
+            razorpayInstance.on('payment.failed', (response) => {
+                console.error('Payment failed', response);
+                alert('Payment failed. Please try again.');
+            });
+
+            razorpayInstance.open();
+        } catch (err) {
+            console.error('Checkout failed', err);
+            alert('Checkout failed. Please try again.');
+        } finally {
+            setIsProcessingPayment(false);
         }
     };
 
@@ -84,8 +151,12 @@ const CartPage = () => {
                         <h3 className="text-2xl font-bold text-right">
                             Total: ${total.toFixed(2)}
                         </h3>
-                        <button className="w-full mt-4 bg-green-700 text-white py-2 rounded-md hover:bg-green-800 transition-colors">
-                            Proceed to Checkout
+                        <button
+                            onClick={handleCheckout}
+                            disabled={isLoading || isProcessingPayment}
+                            className="w-full mt-4 bg-green-700 text-white py-2 rounded-md hover:bg-green-800 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                        >
+                            {isProcessingPayment ? 'Processing...' : 'Proceed to Checkout'}
                         </button>
                     </div>
                 </div>

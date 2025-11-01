@@ -5,6 +5,8 @@ import Login from "./Pages/Login.jsx"
 import AdminDashboard from "./Pages/AdminDashboard.jsx"
 import CustomerHome from "./Pages/CustomerHome.jsx"
 import CartPage from './Pages/CartPage.jsx';
+import OrderSuccess from './Pages/OrderSuccess.jsx';
+import Orders from './Pages/Orders.jsx';
 import { CartProvider } from './Context/CartProvider.jsx'
 import Navbar from './Component/Navbar.jsx';
 import React from 'react';
@@ -34,6 +36,8 @@ function App() {
         <Route path="/AdminDashboard" element={<AdminDashboard />} />
         <Route path="/CustomerHome" element={<CustomerHome />} />
         <Route path="/cart" element={<CartPage />} />
+        <Route path="/order-success" element={<OrderSuccess />} />
+        <Route path="/orders" element={<Orders />} />
       </Route>
     </Routes>
     </CartProvider>
