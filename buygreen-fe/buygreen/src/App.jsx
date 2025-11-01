@@ -13,6 +13,7 @@ function App() {
 
   return (
     <CartProvider>
+      <Navbar/>
     <Routes>
       <Route path="/" element={<Home />} />
       <Route path="/signup" element={<Signup />} />

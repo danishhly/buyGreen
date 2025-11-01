@@ -1,5 +1,5 @@
 import React from 'react';
-import { useCart } from '../Hooks/useCart';
+import { useCart } from '../Hooks/UseCart';
 import { Link } from 'react-router-dom'; // Import Link
 
 const CartPage = () => {
