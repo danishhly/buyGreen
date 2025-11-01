@@ -44,8 +44,14 @@ public class CartServiceImpl implements CartService {
     }
 
     @Override
+    public void clearCartByCustomerId(Long customerId) {
+        repo.deleteByCustomerId(customerId);
+    }
+
+    @Override
     public Cart decrementItem(Long customerId, Long productId) {
         Cart existing = repo.findByCustomerIdAndProductId(customerId, productId);
+
 
         if (existing == null) {
             return null;
