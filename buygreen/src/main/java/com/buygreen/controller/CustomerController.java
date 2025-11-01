@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import java.util.Map;
 
-@CrossOrigin(origins = "http://localhost:5173")
+
 @RestController
 public class CustomerController {
 
@@ -33,7 +33,7 @@ public class CustomerController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginData loginData) {
         Customers existingCustomer = service.getCustomerByEmail(loginData.getEmail());
-        System.out.println("Login request for email: " + loginData.getEmail());
+        System.out.println(STR."Login request for email: \{loginData.getEmail()}");
 
 
         if (existingCustomer == null) {
@@ -47,9 +47,10 @@ public class CustomerController {
 
         return ResponseEntity.ok(Map.of(
                 "message", "Login Succesfull",
+                "id", existingCustomer.getId(),
                 "name", existingCustomer.getName(),
-        "email", existingCustomer.getEmail(),
-        "role", existingCustomer.getRole()
+                "email", existingCustomer.getEmail(),
+                "role", existingCustomer.getRole()
             ));
     }
 }

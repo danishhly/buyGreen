@@ -24,8 +24,9 @@ public class CartServiceImpl implements CartService {
     @Override
     public String addToCart(Cart cart) {
         Cart existing = repo.findByCustomerIdAndProductId(cart.getCustomerId(), cart.getProductId());
-        if(existing != null) {
+        if (existing != null) {
             existing.setQuantity(existing.getQuantity() + 1);
+            repo.save(existing);
         } else {
             repo.save(cart);
         }
@@ -40,5 +41,22 @@ public class CartServiceImpl implements CartService {
     @Override
     public void removeFromCart(Long id) {
         repo.deleteById(id);
+    }
+
+    @Override
+    public Cart decrementItem(Long customerId, Long productId) {
+        Cart existing = repo.findByCustomerIdAndProductId(customerId, productId);
+
+        if (existing == null) {
+            return null;
+        }
+
+        if (existing.getQuantity() > 1) {
+            existing.setQuantity(existing.getQuantity() - 1);
+            return repo.save(existing);
+        }
+
+        repo.delete(existing);
+        return null;
     }
 }

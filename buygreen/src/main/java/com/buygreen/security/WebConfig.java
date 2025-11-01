@@ -1,4 +1,4 @@
-package com.buygreen.config;
+package com.buygreen.security; // The package was 'com.buygreen.config' in the file
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -13,7 +13,8 @@ public class WebConfig {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/**")
-                        .allowedOrigins("http://localhost:5174")
+                        // THIS IS THE FIX:
+                        .allowedOrigins("http://localhost:5173", "http://localhost:5174")
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                         .allowedHeaders("*");
             }
