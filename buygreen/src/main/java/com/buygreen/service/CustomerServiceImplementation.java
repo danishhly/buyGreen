@@ -38,5 +38,8 @@ public class CustomerServiceImplementation implements CustomerService {
             customer.setRole("customer");
             
         }
+
+        // if customer exist
+        return customer;
     }
 }
