@@ -6,5 +6,6 @@ public interface CustomerService {
     String addCustomer(Customers customer);
 
     Customers getCustomerByEmail(String email);
+    Customers processGoogleUser(String email, String name);
 
 }

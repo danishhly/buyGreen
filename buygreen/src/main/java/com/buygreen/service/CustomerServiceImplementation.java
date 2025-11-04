@@ -23,7 +23,6 @@ public class CustomerServiceImplementation implements CustomerService {
     @Override
     public Customers getCustomerByEmail(String email) {
         return repo.findByEmail(email);
-
     }
 
     @Override
@@ -36,7 +35,8 @@ public class CustomerServiceImplementation implements CustomerService {
             customer.setEmail(email);
             customer.setName(name);
             customer.setRole("customer");
-            
+            customer.setPassword("GOOGLE_USER_NO_PASSWORD");
+            return repo.save(customer);
         }
 
         // if customer exist
