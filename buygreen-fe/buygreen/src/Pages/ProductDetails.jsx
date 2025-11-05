@@ -1,0 +1,89 @@
+import React, { useEffect, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { useCart } from '../Hooks/UseCart';
+
+// Re-use your loading spinner
+const LoadingSpinner = () => (
+    <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-green-700"></div>
+    </div>
+);
+
+const ProductDetails = () => {
+    const [product, setProduct] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const { productId } = useParams(); // Gets the ':productId' from the URL
+    const { addToCart } = useCart();
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        // Fetch the single product data
+        const fetchProduct = async () => {
+            try {
+                const response = await axios.get(`http://localhost:8080/products/${productId}`);
+                setProduct(response.data);
+            } catch (err) {
+                console.error("Error fetching product:", err);
+                // If product not found, redirect back home
+                navigate('/CustomerHome');
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchProduct();
+    }, [productId, navigate]);
+
+    const handleAddToCart = () => {
+        try {
+            addToCart(product);
+            alert(`${product.name} ✅ added to cart!`);
+        } catch (err) {
+            console.log("went wrong", err);
+            alert("Failed to add item. Please log in first.");
+            navigate('/login');
+        }
+    };
+
+    if (isLoading) {
+        return <LoadingSpinner />;
+    }
+
+    if (!product) {
+        return <p>Product not found.</p>;
+    }
+
+    return (
+        <div className="max-w-4xl mx-auto p-8">
+            <div className="flex flex-col md:flex-row gap-8">
+                {/* Product Image */}
+                <div className="md:w-1/2">
+                    <img 
+                        src={product.imageUrl} 
+                        alt={product.name} 
+                        className="w-full h-auto object-cover rounded-lg shadow-lg"
+                    />
+                </div>
+                
+                {/* Product Info */}
+                <div className="md:w-1/2">
+                    <h1 className="text-3xl font-bold mb-3">{product.name}</h1>
+                    <p className="text-gray-600 text-lg mb-4">{product.description}</p>
+                    <p className="price text-green-700 font-bold mb-6 text-4xl">
+                        ${product.price.toFixed(2)}
+                    </p>
+                    
+                    <button 
+                        onClick={handleAddToCart}
+                        className="w-full bg-green-700 text-white py-3 px-6 rounded-md hover:bg-green-800 transition-colors text-lg font-semibold"
+                    >
+                        Add to Cart
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default ProductDetails;

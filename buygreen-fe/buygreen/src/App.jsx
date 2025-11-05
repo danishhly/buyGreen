@@ -10,6 +10,7 @@ import Orders from './Pages/Orders.jsx';
 import { CartProvider } from './Context/CartProvider.jsx'
 import Navbar from './Component/Navbar.jsx';
 import React from 'react';
+import ProductDetails from './Pages/ProductDetails.jsx';
 
 import AdminRoute from "./Component/AdminRoute.jsx";
 import CustomerRoute from "./Component/CustomerRoute.jsx";
@@ -43,6 +44,7 @@ function App() {
             <Route path="/cart" element={<CartPage />} />
             <Route path="/order-success" element={<OrderSuccess />} />
             <Route path="/orders" element={<Orders />} />
+            <Route path="/product/:productId" element={<ProductDetails />} />
           </Route>
         </Route>
 

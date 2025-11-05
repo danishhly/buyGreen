@@ -87,17 +87,29 @@ const CustomerHome = () => {
             ) : (
                 <div className="product-grid grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                     {products.map((p) => (
-                        <div key={p.id} className="product-card border rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-shadow">
+                        <Link 
+                        to={`/product/${p.id}`} 
+                            key={p.id} 
+                            className="product-card block border rounded-lg overflow-hidden shadow-lg hover:shadow-xl transition-shadow"
+                        >
+                       
                             <img src={p.imageUrl} alt={p.name} className="w-full h-48 object-cover" />
                             <div className="p-4">
                                 <h3 className="text-lg font-semibold">{p.name}</h3>
                                 <p className="desc text-gray-600 mt-1 text-sm">{p.description}</p>
                                 <p className="price text-green-700 font-bold mt-2 text-xl">${p.price.toFixed(2)}</p>
-                                <button onClick={() => handleAddToCart(p)} className="w-full mt-4 bg-green-700 text-white py-2 rounded-md hover:bg-green-800 transition-colors">
+
+                                <button onClick={(e) => {
+                                    e.preventDefault();
+                                    handleAddToCart(p);
+                                }}
+
+                               className="w-full mt-4 bg-green-700 text-white py-2 rounded-md hover:bg-green-800 transition-colors">
                                     Add to Cart
                                 </button>
                             </div>
-                        </div>
+                            </Link>
+                        
                     ))}
                 </div>
             )}
