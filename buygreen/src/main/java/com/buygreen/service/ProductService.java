@@ -9,5 +9,6 @@ import java.util.List;
         List<Product> getAllProducts();
         Product updateProduct(Long id, Product product);
         String deleteProduct(Long id);
+        Product getProductById(Long id);
     }
 

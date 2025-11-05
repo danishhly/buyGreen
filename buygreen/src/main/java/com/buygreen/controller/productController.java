@@ -39,4 +39,14 @@ public class productController {
     public ResponseEntity<?> deleteProduct(@PathVariable Long id) {
         return ResponseEntity.ok(service.deleteProduct(id));
     }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getProductById(@PathVariable Long id) {
+        Product product = service.getProductById(id);
+        if(product != null) {
+            return ResponseEntity.ok(product);
+        } else {
+            return ResponseEntity.badRequest().body("Product not found");
+        }
+    }
 }

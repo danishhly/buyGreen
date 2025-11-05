@@ -48,4 +48,10 @@ public class ProductServiceImpl  implements ProductService{
         return "Product not found";
     }
 
+    @Override
+    public Product getProductById(Long id) {
+        //findById returns an optioonal, so we use .orElse(null)
+        return repo.findById(id).orElse(null);
+    }
+
 }
