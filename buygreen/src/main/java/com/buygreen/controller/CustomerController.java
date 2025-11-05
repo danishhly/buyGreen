@@ -16,7 +16,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
-
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.http.HttpStatus;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.Collections;
@@ -29,6 +30,10 @@ public class CustomerController {
 
     @Autowired
     CustomerService service;
+
+    //inject the encoder
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     // 3. FIXED: Correctly injecting the Google Client ID
     @Value("${google.clientId}")
@@ -56,8 +61,13 @@ public class CustomerController {
         if (existingCustomer == null) {
             return ResponseEntity.badRequest().body(Map.of("message", "Users not found"));
         }
+//            no longer need to  use .equals() for the password.
+        //    used passwordEncoder.matches() to securely compare them.
+//        if (!existingCustomer.getPassword().equals(loginData.getPassword())) {
+//            return ResponseEntity.badRequest().body(Map.of("message", "invalid password"));
+//        }
 
-        if (!existingCustomer.getPassword().equals(loginData.getPassword())) {
+        if(!passwordEncoder.matches(loginData.getPassword(), existingCustomer.getPassword())) {
             return ResponseEntity.badRequest().body(Map.of("message", "invalid password"));
         }
 

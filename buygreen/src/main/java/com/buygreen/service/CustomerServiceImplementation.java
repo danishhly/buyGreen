@@ -4,6 +4,7 @@ import com.buygreen.model.Customers;
 import com.buygreen.repository.CustomerRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Service
 public class CustomerServiceImplementation implements CustomerService {
@@ -11,11 +12,18 @@ public class CustomerServiceImplementation implements CustomerService {
     @Autowired
     private CustomerRepository repo;
 
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
     @Override
     public String addCustomer(Customers customer) {
         if (repo.findByEmail(customer.getEmail()) != null) {
             return "fail";
         }
+
+        //Hash the password
+        //get the plain text password and encode it before saving
+        customer.setPassword(passwordEncoder.encode(customer.getPassword()));
         repo.save(customer);
         return "success";
     }
@@ -35,7 +43,7 @@ public class CustomerServiceImplementation implements CustomerService {
             customer.setEmail(email);
             customer.setName(name);
             customer.setRole("customer");
-            customer.setPassword("GOOGLE_USER_NO_PASSWORD");
+            customer.setPassword(passwordEncoder.encode("GOOGLE_USER_NO_PASSWORD"));
             return repo.save(customer);
         }
 
