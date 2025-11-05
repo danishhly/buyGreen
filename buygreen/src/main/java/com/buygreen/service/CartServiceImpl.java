@@ -1,6 +1,7 @@
 package com.buygreen.service;
 
 import com.buygreen.model.Cart;
+import com.buygreen.model.Product;
 import com.buygreen.repository.CartRepository;
 import com.buygreen.repository.CustomerRepository;
 import com.buygreen.repository.ProductRepository;
@@ -23,13 +24,42 @@ public class CartServiceImpl implements CartService {
 
     @Override
     public String addToCart(Cart cart) {
+        // 1. Find the product to check its stock
+        Product product = productRepo.findById(cart.getProductId())
+                .orElse(null);
+
+        if (product == null) {
+            return "Product not found";
+        }
+
+        // 2. Find the existing cart item, if any
         Cart existing = repo.findByCustomerIdAndProductId(cart.getCustomerId(), cart.getProductId());
+
+        int newQuantity;
+
         if (existing != null) {
-            existing.setQuantity(existing.getQuantity() + cart.getQuantity());
+            // This is an existing item, calculate the new total quantity
+            newQuantity = existing.getQuantity() + cart.getQuantity();
+        } else {
+            // This is a new item being added to the cart
+            newQuantity = cart.getQuantity();
+        }
+
+        // 3. This is the new stock check!
+        if (newQuantity > product.getStockQuantity()) {
+            // Not enough stock, return an error message
+            return "Not enough stock. Only " + product.getStockQuantity() + " available.";
+        }
+
+        // 4. If enough stock, save the cart
+        if (existing != null) {
+            existing.setQuantity(newQuantity);
             repo.save(existing);
         } else {
+            cart.setQuantity(newQuantity); // Set the quantity on the new cart item
             repo.save(cart);
         }
+
         return "Item added to cart";
     }
 
