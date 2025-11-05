@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import { useCart } from '../Hooks/UseCart';
+import ImageSlider from '../Component/ImageSlider.jsx';
 
 // Re-use your loading spinner
 const LoadingSpinner = () => (
@@ -79,16 +80,22 @@ const ProductDetails = () => {
 
     const isOutOfStock = product.stockQuantity <= 0;
 
+    const productImages = [
+        product.imageUrl,
+        product.imageUrl, // You can replace these with different URLs later
+        product.imageUrl
+    ];
+
     return (
         <div className="max-w-4xl mx-auto p-8">
+            <Link to="/CustomerHome" className="text-green-700 hover:underline mb-4 block">
+                &larr; Back to all products
+            </Link>
             <div className="flex flex-col md:flex-row gap-8">
-                {/* Product Image */}
-                <div className="md:w-1/2">
-                    <img 
-                        src={product.imageUrl} 
-                        alt={product.name} 
-                        className="w-full h-auto object-cover rounded-lg shadow-lg"
-                    />
+              <div className="flex flex-col md:flex-row gap-8">
+                {/* 3. REPLACE THE OLD <img> TAG */}
+                <div className="md:w-1/2 h-96"> {/* We add a fixed height for the slider container */}
+                    <ImageSlider images={productImages} />
                 </div>
                 
                 {/* Product Info */}
@@ -108,6 +115,7 @@ const ProductDetails = () => {
                     <div className="flex items-center gap-4 mb-6">
                         <p className="font-semibold">Quantity:</p>
                         <div className="flex items-center border rounded">
+                            </div>
                             <button 
                                 onClick={handleDecrease} 
                                 className="px-4 py-2 text-lg"

@@ -25,7 +25,7 @@ const CartPage = () => {
             });
         } catch (err) {
             console.error('Failed to increase quantity', err);
-            alert('Could not increase item quantity. Please try again.');
+            alert(err.meassage || 'Could not increase item quantity. Please try again.');
         }
     };
 

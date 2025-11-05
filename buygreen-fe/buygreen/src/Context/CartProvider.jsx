@@ -68,7 +68,7 @@ export const CartProvider = ({ children }) => {
        // }
 
         // ✅ SEND TOKEN IN HEADERS
-        await axios.post(
+       const response = await axios.post(
             "http://localhost:8080/cart/add",
             {
                 customerId: customer.id,
@@ -84,6 +84,9 @@ export const CartProvider = ({ children }) => {
                 }
             }
         );
+        if(response.data != "Item added to cart") {
+            throw new Error(response.data);
+        }
 
         await fetchCart();
     } catch (err) {

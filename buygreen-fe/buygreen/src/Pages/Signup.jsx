@@ -35,6 +35,10 @@ const response = await axios.post(
     }
 );
             setMessage(response.data.message || "Signup successful!");
+
+            setTimeout(() => {
+                navigate('/login');
+            }, 2000);
         } catch (error) {
             setMessage(error.response?.data?.message || "Error during signup.");
             console.log(error.response);
