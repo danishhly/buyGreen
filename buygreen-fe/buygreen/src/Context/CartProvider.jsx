@@ -56,7 +56,7 @@ export const CartProvider = ({ children }) => {
         }
     }, []);
 
-   const addToCart = async (product) => {
+   const addToCart = async (product, quantity = 1) => {
     const customer = getCustomer();
     if (!customer) throw new Error("User is not logged in.");
 
@@ -75,7 +75,7 @@ export const CartProvider = ({ children }) => {
                 productId: product.id,
                 productName: product.name,
                 price: product.price,
-                quantity: 1
+                quantity: quantity
             },
             {
                 headers: {

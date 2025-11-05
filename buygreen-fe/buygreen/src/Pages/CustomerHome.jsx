@@ -93,7 +93,7 @@ const CustomerHome = () => {
             return;
         }
         try {
-            await addToCart(product);
+            await addToCart(product, 1);
             alert(`${product.name} ✅ added to cart!`);
         } catch (err) {
             console.log("went wrong", err)

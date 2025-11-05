@@ -10,11 +10,22 @@ const LoadingSpinner = () => (
     </div>
 );
 
+const StockDisplay = ({ stock }) => {
+    if(stock > 10) {
+        return <p className = "text-green-600 font-semibold">In Stock</p>
+    }
+    if(stock > 0){
+        return <p className="text-yellow-600 font-semibold">Only {stock} left!</p>;
+    }
+    return <p className="text-red-600 font-semibold">Out of Stock</p>
+};
+
 const ProductDetails = () => {
     const [product, setProduct] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const { productId } = useParams(); // Gets the ':productId' from the URL
     const { addToCart } = useCart();
+    const [quantity, setQuantity] = useState(1);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -35,10 +46,22 @@ const ProductDetails = () => {
         fetchProduct();
     }, [productId, navigate]);
 
+    const handleIncrease = () => {
+        if(quantity < product.stockQuantity) {
+            setQuantity(prev => prev + 1);
+        }
+    };
+
+    const handleDecrease = () => {
+        if(quantity > 1) {
+            setQuantity(prev => prev  - 1)
+        }
+    };
+
     const handleAddToCart = () => {
         try {
-            addToCart(product);
-            alert(`${product.name} ✅ added to cart!`);
+            addToCart(product, quantity);
+            alert(`${quantity} x ${product.name} ✅ added to cart!`);
         } catch (err) {
             console.log("went wrong", err);
             alert("Failed to add item. Please log in first.");
@@ -54,6 +77,8 @@ const ProductDetails = () => {
         return <p>Product not found.</p>;
     }
 
+    const isOutOfStock = product.stockQuantity <= 0;
+
     return (
         <div className="max-w-4xl mx-auto p-8">
             <div className="flex flex-col md:flex-row gap-8">
@@ -68,17 +93,45 @@ const ProductDetails = () => {
                 
                 {/* Product Info */}
                 <div className="md:w-1/2">
+                <p className="text-gray-500 text-sm font-semibold mb-2 uppercase">
+                        {product.category}
+                    </p>
                     <h1 className="text-3xl font-bold mb-3">{product.name}</h1>
                     <p className="text-gray-600 text-lg mb-4">{product.description}</p>
+                    {/* 7. Stock Display (Feature 2) */}
+                    <div className="mb-4">
+                        <StockDisplay stock={product.stockQuantity} />
+                    </div>
                     <p className="price text-green-700 font-bold mb-6 text-4xl">
                         ${product.price.toFixed(2)}
                     </p>
+                    <div className="flex items-center gap-4 mb-6">
+                        <p className="font-semibold">Quantity:</p>
+                        <div className="flex items-center border rounded">
+                            <button 
+                                onClick={handleDecrease} 
+                                className="px-4 py-2 text-lg"
+                                disabled={quantity <= 1}
+                            > - </button>
+
+                            <span className="px-4 py-2 text-lg">{quantity}</span>
+                            <button 
+                                onClick={handleIncrease} 
+                                className="px-4 py-2 text-lg"
+                                disabled={quantity >= product.stockQuantity}
+                            >
+                                +
+                            </button>
+                            </div>
+                            </div>
                     
                     <button 
                         onClick={handleAddToCart}
-                        className="w-full bg-green-700 text-white py-3 px-6 rounded-md hover:bg-green-800 transition-colors text-lg font-semibold"
+                        className="w-full bg-green-700 text-white py-3 px-6 rounded-md hover:bg-green-800 transition-colors text-lg font-semibold disabled:bg-gray-400 disabled:cursor-not-allowed"
+                        disabled={isOutOfStock} // Disable button if out of stock
                     >
-                        Add to Cart
+                        {isOutOfStock ? 'Out of Stock' : 'Add to Cart'}
+                      
                     </button>
                 </div>
             </div>
