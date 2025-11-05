@@ -25,7 +25,7 @@ public class CartServiceImpl implements CartService {
     public String addToCart(Cart cart) {
         Cart existing = repo.findByCustomerIdAndProductId(cart.getCustomerId(), cart.getProductId());
         if (existing != null) {
-            existing.setQuantity(existing.getQuantity() + 1);
+            existing.setQuantity(existing.getQuantity() + cart.getQuantity());
             repo.save(existing);
         } else {
             repo.save(cart);
