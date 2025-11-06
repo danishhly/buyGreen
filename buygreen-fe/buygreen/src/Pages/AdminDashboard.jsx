@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
+import api from "../Api/axiosConfig";
 
 function AdminDashboard() {
     const [products, setProducts] = useState([]);
@@ -20,7 +20,7 @@ function AdminDashboard() {
     }, []);
 
     const fetchProducts = async () => {
-        const response = await axios.get("http://localhost:8080/products/all");
+        const response = await api.get("/products/all");
         setProducts(response.data);
     };
 
@@ -40,7 +40,7 @@ function AdminDashboard() {
         if (editingId) {
             // We are UPDATING
             try {
-                await axios.put(`http://localhost:8080/products/update/${editingId}`, formData);
+                await api.put(`/products/update/${editingId}`, formData);
                 alert("Product updated successfully!");
             } catch (err) {
                 console.error("Error updating product:", err);
@@ -49,7 +49,7 @@ function AdminDashboard() {
         } else {
             // We are CREATING
             try {
-                await axios.post("http://localhost:8080/products/add", formData);
+                await api.post("/products/add", formData);
                 alert("Product added successfully!");
             } catch (err) {
                 console.error("Error adding product:", err);
@@ -77,7 +77,7 @@ function AdminDashboard() {
     };
 
     const deleteProduct = async (id) => {
-        await axios.delete(`http://localhost:8080/products/delete/${id}`);
+        await api.delete(`http://localhost:8080/products/delete/${id}`);
         fetchProducts();
     };
 

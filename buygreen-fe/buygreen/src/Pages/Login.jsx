@@ -20,66 +20,51 @@ function Login() {
     });
   };
 
-  const handleSubmit = async (e) => {
+const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsLoading(true); // 2. Set loading to true before API call
+    setIsLoading(true); // Set loading to true
     setMessage(""); // Clear previous messages
 
     try {
-      const payload = {
-        ...formData
-      };
+      const payload = { ...formData };
+      
+      // The login page does not need the interceptor, so 'axios' is correct here.
       const response = await axios.post(
         "http://localhost:8080/login",
         payload,
         {
-          headers: {
-            "Content-Type": "application/json"
-          }
+          headers: { "Content-Type": "application/json" }
         }
       );
-      const data = response?.data || {};
+
+      const data = response.data;
       setMessage(data.message);
-      console.log("Login Success", response.data);
+      console.log("Login Success", data);
 
-      const customer = {
-        id: response.data.id,
-        name: response.data.name,
-        email: response.data.email,
-        role: response.data.role
-      };
+      // --- THIS IS THE FIX ---
 
-      // 3. Save user data to localStorage
-      // This makes the user's name and role available across your entire app
-      if (data.id !== undefined && data.id !== null) {
-        localStorage.setItem('customerId', String(data.id));
-      }
-      if (customer.name) {
-        localStorage.setItem('customerName', customer.name);
-      }
+      // 1. Get the data from the correct nested objects
+      const customer = data.customer;
+      const token = data.token;
 
-      if (customer.role) {
-        localStorage.setItem('Role', customer.role);
-      }
-
+      // 2. Save ONLY the two items we need.
+      // All other components (Navbar, CartProvider)
+      // are built to read from these two items.
       localStorage.setItem('customer', JSON.stringify(customer));
+      localStorage.setItem('token', token);
 
-      // You should also store the authentication token here if your API sends one
-      //  if (data.token) {
-      //   localStorage.setItem('authToken', response.data.token);
-      // }
-
-      // Redirect after login
-      if (data.role === "admin") {
+      // 3. Redirect based on the 'customer' object's role
+      if (customer.role === "admin") {
         navigate("/AdminDashboard");
       } else {
         navigate("/CustomerHome");
       }
+      
     } catch (error) {
       console.error(error.response);
       setMessage(error.response?.data?.message || "Login failed");
     } finally {
-      setIsLoading(false); // 4. Set loading to false after API call completes
+      setIsLoading(false); // Set loading to false
     }
   };
 

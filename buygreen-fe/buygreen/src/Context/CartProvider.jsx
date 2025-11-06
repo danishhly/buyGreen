@@ -1,6 +1,6 @@
 // src/Contexts/CartProvider.jsx
 import React, { useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
+import api from '../Api/axiosConfig';
 import { CartContext } from './CartContext'; // <-- Import the context
 
 // This file now only has ONE export: the component itself.
@@ -18,16 +18,20 @@ export const CartProvider = ({ children }) => {
         }
     };
 
+   // --- THIS IS THE FIX ---
     const getCustomer = () => {
-        const idRaw = localStorage.getItem('customerId');
-        const nameRaw = localStorage.getItem('customerName');
-
-        const id = parseStoredValue(idRaw);
-        const name = parseStoredValue(nameRaw);
-
-        if (!id) return null;
-
-        return { id, name };
+        const storedCustomer = localStorage.getItem('customer');
+        if (!storedCustomer) {
+            return null; // No user found
+        }
+        try {
+            // Parse the full customer object
+            const customer = JSON.parse(storedCustomer);
+            return customer; // Return the whole object { id, name, email, role }
+        } catch (err) {
+            console.error("Failed to parse customer from localStorage", err);
+            return null;
+        }
     };
     
 
@@ -41,7 +45,7 @@ export const CartProvider = ({ children }) => {
         try {
            //const token = localStorage.getItem('authToken');
             // I'm assuming your endpoint needs the customer ID
-            const res = await axios.get(`http://localhost:8080/cart/${customer.id}`);
+            const res = await api.get(`/cart/${customer.id}`);
            // {  
             //    headers: {  
             //        'Authorization': `Bearer ${token}`  
@@ -68,8 +72,8 @@ export const CartProvider = ({ children }) => {
        // }
 
         // ✅ SEND TOKEN IN HEADERS
-       const response = await axios.post(
-            "http://localhost:8080/cart/add",
+       const response = await api.post(
+            "/cart/add",
             {
                 customerId: customer.id,
                 productId: product.id,
@@ -100,8 +104,8 @@ export const CartProvider = ({ children }) => {
     if (!customer) throw new Error("User is not logged in.");
 
     try {
-        await axios.put(
-            "http://localhost:8080/cart/decrement",
+        await api.put(
+            "/cart/decrement",
             {
                 customerId: customer.id,
                 productId
@@ -128,7 +132,7 @@ export const CartProvider = ({ children }) => {
 
     const createPaymentOrder = async (amount) => {
         const normalizedAmount = Number(amount.toFixed(2));
-        const response = await axios.post("http://localhost:8080/payments/order", {
+        const response = await api.post("/payments/order", {
             amount: normalizedAmount,
             currency: "INR",
             receipt: `buygreen_${Date.now()}`
@@ -155,7 +159,7 @@ export const CartProvider = ({ children }) => {
             }))
         };
 
-        const response = await axios.post("http://localhost:8080/orders/create", payload, {
+        const response = await api.post("/orders/create", payload, {
             headers: {
                 'Content-Type': 'application/json'
             }
@@ -169,7 +173,7 @@ export const CartProvider = ({ children }) => {
         const customer = getCustomer();
         if (!customer) throw new Error("User is not logged in.");
 
-        const response = await axios.get(`http://localhost:8080/orders/customer/${customer.id}`);
+        const response = await api.get(`http://localhost:8080/orders/customer/${customer.id}`);
         return response.data;
     }
 

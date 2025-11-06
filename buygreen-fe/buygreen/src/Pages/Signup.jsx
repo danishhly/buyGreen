@@ -56,10 +56,12 @@ const response = await axios.post(
             );
 
             //backend returns data in localStorage
-            const customer = response.data;
+            const customer = response.data.customer;
+            const token = response.data.token;
 
             //Store customer data in localStorage
             localStorage.setItem('customer', JSON.stringify(customer));
+            localStorage.setItem('token', token);
 
             // Redirect based on role
             if (customer.role == "admin") {

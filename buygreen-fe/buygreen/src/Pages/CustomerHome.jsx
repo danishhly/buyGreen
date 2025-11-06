@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
-import axios from "axios";
+import api from '../Api/axiosConfig';
 import { useCart } from '../Hooks/UseCart';
 
 // --- LoadingSpinner (no changes) ---
@@ -31,7 +31,7 @@ const CustomerHome = () => {
     // --- 2. DATA FETCHING (MODIFIED) ---
     // This effect runs only ONCE to get all data
     useEffect(() => {
-        axios.get("http://localhost:8080/products/all")
+        api.get("/products/all")
             .then((res) => {
                 const products = res.data;
                 // Set both the master list and the displayed list

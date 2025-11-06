@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import axios from 'axios';
+
+import api from '../api/axiosConfig';
 import { useCart } from '../Hooks/UseCart';
 import ImageSlider from '../Component/ImageSlider.jsx';
 
@@ -33,7 +34,7 @@ const ProductDetails = () => {
         // Fetch the single product data
         const fetchProduct = async () => {
             try {
-                const response = await axios.get(`http://localhost:8080/products/${productId}`);
+                const response = await api.get(`/products/${productId}`);
                 setProduct(response.data);
             } catch (err) {
                 console.error("Error fetching product:", err);
