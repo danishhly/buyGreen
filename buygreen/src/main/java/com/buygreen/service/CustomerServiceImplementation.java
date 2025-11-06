@@ -62,4 +62,20 @@ public class CustomerServiceImplementation implements CustomerService, UserDetai
         // if customer exist
         return customer;
     }
+
+    @Override
+    public boolean changePassword(String email, String oldPassword, String newPassword) {
+        Customers customer = repo.findByEmail(email);
+        if (customer == null) {
+            return false;
+        }
+
+        if(passwordEncoder.matches(oldPassword, customer.getPassword())) {
+            customer.setPassword(passwordEncoder.encode(newPassword));
+            repo.save(customer);
+            return true;
+        }
+        return false;
+    }
+
 }

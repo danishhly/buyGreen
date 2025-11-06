@@ -8,4 +8,6 @@ public interface CustomerService {
     Customers getCustomerByEmail(String email);
     Customers processGoogleUser(String email, String name);
 
+    boolean changePassword(String email, String oldPassword, String newPassword);
+
 }

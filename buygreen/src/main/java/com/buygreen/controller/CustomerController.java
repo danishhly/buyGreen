@@ -1,8 +1,10 @@
 package com.buygreen.controller;
 
+import com.buygreen.dto.PasswordChangedDto;
 import com.buygreen.dto.TokenDto;
 import com.buygreen.dto.LoginData;
 import com.buygreen.model.Customers;
+import com.buygreen.security.JwtUtil;
 import com.buygreen.service.CustomerService;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
@@ -18,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.http.HttpStatus;
+import java.security.Principal;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.Collections;
@@ -35,6 +38,9 @@ public class CustomerController {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Autowired
+    private JwtUtil jwtUtil;
+
     // 3. FIXED: Correctly injecting the Google Client ID
     @Value("${google.clientId}")
     private String GOOGLE_CLIENT_ID;
@@ -50,6 +56,25 @@ public class CustomerController {
             return ResponseEntity.ok(Map.of("message", "signup successful"));
         } else {
             return ResponseEntity.badRequest().body(Map.of("message", "Email already Exist"));
+        }
+    }
+
+    @PostMapping("/customers/change-password")
+    public ResponseEntity<?> changePassword(@RequestBody PasswordChangedDto passwordDto, Principal principal) {
+
+        // 'Principal' securely gets the logged-in user's name (which is their email in our case)
+        String userEmail = principal.getName();
+
+        boolean isChanged = service.changePassword(
+                userEmail,
+                passwordDto.getOldPassword(),
+                passwordDto.getNewPassword()
+        );
+
+        if (isChanged) {
+            return ResponseEntity.ok(Map.of("message", "Password changed successfully"));
+        } else {
+            return ResponseEntity.badRequest().body(Map.of("message", "Invalid old password"));
         }
     }
 
@@ -71,13 +96,17 @@ public class CustomerController {
             return ResponseEntity.badRequest().body(Map.of("message", "invalid password"));
         }
 
-        // 5. FIXED: The login method now closes here.
+        final String token = jwtUtil.generateToken(existingCustomer);
+
         return ResponseEntity.ok(Map.of(
                 "message", "Login Succesfull",
-                "id", existingCustomer.getId(),
-                "name", existingCustomer.getName(),
-                "email", existingCustomer.getEmail(),
-                "role", existingCustomer.getRole()
+                "token", token,
+                "customer", Map.of(
+                        "id", existingCustomer.getId(),
+                        "name", existingCustomer.getName(),
+                        "email",existingCustomer.getEmail(),
+                        "role",existingCustomer.getRole()
+                )
         ));
     }
 
@@ -104,13 +133,17 @@ public class CustomerController {
             // Get or create the customer
             Customers customer = service.processGoogleUser(email, name);
 
+            final String token = jwtUtil.generateToken(customer);
             // 7. FIXED: Return the details for the customer from 'processGoogleUser'
             return ResponseEntity.ok(Map.of(
                     "message", "Login Successful",
+                    "token", token,
+                    "customer", Map.of(
                     "id", customer.getId(),
                     "name", customer.getName(),
                     "email", customer.getEmail(),
                     "role", customer.getRole()
+                    )
             ));
         } else {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Invalid Google Token"));
