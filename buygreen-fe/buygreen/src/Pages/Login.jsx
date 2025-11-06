@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+// 1. Import Link for navigation and GoogleLogin
+import { useNavigate, Link } from "react-router-dom";
+import { GoogleLogin } from '@react-oauth/google';
 
 function Login() {
   const [formData, setFormData] = useState({
@@ -9,7 +11,6 @@ function Login() {
   });
 
   const [message, setMessage] = useState("");
-  // 1. Add loading state
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -20,40 +21,31 @@ function Login() {
     });
   };
 
-const handleSubmit = async (e) => {
+  // This is your existing, correct handleSubmit function
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsLoading(true); // Set loading to true
-    setMessage(""); // Clear previous messages
+    setIsLoading(true);
+    setMessage(""); 
 
     try {
       const payload = { ...formData };
       
-      // The login page does not need the interceptor, so 'axios' is correct here.
       const response = await axios.post(
         "http://localhost:8080/login",
         payload,
-        {
-          headers: { "Content-Type": "application/json" }
-        }
+        { headers: { "Content-Type": "application/json" } }
       );
 
       const data = response.data;
       setMessage(data.message);
       console.log("Login Success", data);
 
-      // --- THIS IS THE FIX ---
-
-      // 1. Get the data from the correct nested objects
       const customer = data.customer;
       const token = data.token;
 
-      // 2. Save ONLY the two items we need.
-      // All other components (Navbar, CartProvider)
-      // are built to read from these two items.
       localStorage.setItem('customer', JSON.stringify(customer));
       localStorage.setItem('token', token);
 
-      // 3. Redirect based on the 'customer' object's role
       if (customer.role === "admin") {
         navigate("/AdminDashboard");
       } else {
@@ -64,19 +56,71 @@ const handleSubmit = async (e) => {
       console.error(error.response);
       setMessage(error.response?.data?.message || "Login failed");
     } finally {
-      setIsLoading(false); // Set loading to false
+      setIsLoading(false);
     }
+  };
+
+  // 2. This is the Google login logic copied from your Signup.jsx
+  const handleGoogleSuccess = async (credentialResponse) => {
+    try {
+      const response = await axios.post(
+          "http://localhost:8080/auth/google",
+          { token: credentialResponse.credential }
+      );
+      
+      const customer = response.data.customer;
+      const token = response.data.token;
+
+      localStorage.setItem('customer', JSON.stringify(customer));
+      localStorage.setItem('token', token);
+      
+      if (customer.role === "admin") {
+          navigate("/AdminDashboard");
+      } else {
+          navigate("/CustomerHome");
+      }
+
+    } catch (error) {
+      setMessage(error.response?.data?.message || "Google login failed.");
+      console.error(error);
+    }
+  };
+
+  const handleGoogleError = () => {
+    setMessage("Google login failed. Please try again.");
   };
 
   return (
     <div className="w-full flex items-center justify-center min-h-screen bg-green-50">
-      <div className="w-full max-w-md bg-white p-8 rounded-lg shadow">
-        <h1 className="text-2xl font-bold text-green-700 mb-6 text-center">
-          Login
-        </h1>
+      <div className="w-full max-w-md bg-white p-8 rounded-lg shadow-lg">
+        
+        {/* 3. Added a link to the Home page */}
+        <Link to="/" className="text-2xl font-bold text-green-700 mb-6 text-center block">
+          BuyGreen
+        </Link>
+        
+        <h2 className="text-xl font-semibold text-gray-700 mb-6 text-center">
+          Login to your Account
+        </h2>
+
+        {/* 4. Added Google Sign-in Button */}
+        <div className="flex flex-col items-center mb-4">
+            <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={handleGoogleError}
+                useOneTap
+            />
+        </div>
+
+        <div className="relative flex py-5 items-center">
+            <div className="flex-grow border-t border-gray-300"></div>
+            <span className="flex-shrink mx-4 text-gray-400">OR</span>
+            <div className="flex-grow border-t border-gray-300"></div>
+        </div>
+
         <form onSubmit={handleSubmit} className="flex flex-col space-y-4">
           <input
-            type="email" // Changed to type="email" for better validation
+            type="email"
             name="email"
             placeholder="Email"
             onChange={handleChange}
@@ -94,12 +138,29 @@ const handleSubmit = async (e) => {
           <button
             type="submit"
             className="bg-green-600 hover:bg-green-700 text-white p-2 rounded-md disabled:bg-green-300"
-            disabled={isLoading} // 5. Disable button while loading
+            disabled={isLoading}
           >
             {isLoading ? 'Logging in...' : 'Login'}
           </button>
         </form>
+
         {message && <p className="mt-4 text-center text-red-600">{message}</p>}
+        
+        {/* 5. Added Sign up and Forgot Password links */}
+        <div className="text-sm text-center mt-6">
+          <p className="text-gray-600">
+            Don't have an account?{' '}
+            <Link to="/signup" className="font-medium text-green-600 hover:underline">
+              Sign up
+            </Link>
+          </p>
+          <p className="mt-2">
+            <Link to="/forgot-password" className="font-medium text-green-600 hover:underline">
+                Forgot password?
+            </Link>
+          </p>
+        </div>
+
       </div>
     </div>
   );

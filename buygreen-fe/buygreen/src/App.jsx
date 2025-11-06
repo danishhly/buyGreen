@@ -12,7 +12,8 @@ import { CartProvider } from './Context/CartProvider.jsx'
 import Navbar from './Component/Navbar.jsx';
 import React from 'react';
 import ProductDetails from './Pages/ProductDetails.jsx';
-
+import ForgotPassword from "./Pages/ForgotPassword.jsx"; 
+import ResetPassword from "./Pages/ResetPassword.jsx";
 import AdminRoute from "./Component/AdminRoute.jsx";
 import CustomerRoute from "./Component/CustomerRoute.jsx";
 
@@ -35,6 +36,8 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} /> {/* 3. ADD ROUTE */}
+        <Route path="/reset-password" element={<ResetPassword />} />
         </Route>
 
         {/* === CUSTOMER ROUTES === */}
