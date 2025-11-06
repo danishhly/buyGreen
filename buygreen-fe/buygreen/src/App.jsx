@@ -2,6 +2,7 @@ import { Routes, Route, Outlet } from "react-router-dom"
 import Home from "./Pages/Home.jsx"
 import Signup from "./Pages/Signup.jsx"
 import Login from "./Pages/Login.jsx"
+import ProfilePage from './Pages/ProfilePage.jsx';
 import AdminDashboard from "./Pages/AdminDashboard.jsx"
 import CustomerHome from "./Pages/CustomerHome.jsx"
 import CartPage from './Pages/CartPage.jsx';
@@ -43,6 +44,7 @@ function App() {
             <Route path="/CustomerHome" element={<CustomerHome />} />
             <Route path="/cart" element={<CartPage />} />
             <Route path="/order-success" element={<OrderSuccess />} />
+            <Route path="/profile" element={<ProfilePage />} />
             <Route path="/orders" element={<Orders />} />
             <Route path="/product/:productId" element={<ProductDetails />} />
           </Route>
