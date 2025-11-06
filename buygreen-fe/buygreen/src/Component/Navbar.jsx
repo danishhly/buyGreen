@@ -50,9 +50,8 @@ const Navbar = () => {
                         </div>
                         <div className="hidden md:block ml-6">
                             <ul className="flex items-center gap-6 text-sm">
-                                <li><Link to="/" className="text-gray-500 transition hover:text-green-700/75">Home</Link></li>
+                                <li><Link to="/CustomerHome" className="text-gray-500 transition hover:text-green-700/75">Home</Link></li>
                                 
-                                {/* This will now work correctly */}
                                 {customer && (
                                     <li>
                                         <Link to="/profile" className="text-gray-500 transition hover:text-green-700/75">
