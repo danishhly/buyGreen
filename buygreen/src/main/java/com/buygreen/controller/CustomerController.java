@@ -21,6 +21,8 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.http.HttpStatus;
 import java.security.Principal;
+import com.buygreen.dto.ForgotPasswordDto;
+import com.buygreen.dto.ResetPasswordDto;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.Collections;
@@ -40,6 +42,41 @@ public class CustomerController {
 
     @Autowired
     private JwtUtil jwtUtil;
+
+    // ADD THESE TWO DTOs (or create new files for them like PasswordChangeDto)
+    static class ForgotPasswordDto {
+        private String email;
+        public String getEmail() { return email; }
+        public void setEmail(String email) { this.email = email; }
+    }
+    static class ResetPasswordDto {
+        private String token;
+        private String newPassword;
+        public String getToken() { return token; }
+        public void setToken(String token) { this.token = token; }
+        public String getNewPassword() { return newPassword; }
+        public void setNewPassword(String newPassword) { this.newPassword = newPassword; }
+    }
+
+    // --- ADD NEW ENDPOINT 1 ---
+    @PostMapping("/forgot-password")
+    public ResponseEntity<?> forgotPassword(@RequestBody ForgotPasswordDto forgotDto) {
+        service.createPasswordResetToken(forgotDto.getEmail());
+        // Always return success to prevent email enumeration attacks
+        return ResponseEntity.ok(Map.of("message", "If an account exists, a reset link has been sent."));
+    }
+
+    // --- ADD NEW ENDPOINT 2 ---
+    @PostMapping("/reset-password")
+    public ResponseEntity<?> resetPassword(@RequestBody ResetPasswordDto resetDto) {
+        boolean isReset = service.resetPassword(resetDto.getToken(), resetDto.getNewPassword());
+        if (isReset) {
+            return ResponseEntity.ok(Map.of("message", "Password reset successfully."));
+        } else {
+            return ResponseEntity.badRequest().body(Map.of("message", "Invalid or expired token."));
+        }
+    }
+
 
     // 3. FIXED: Correctly injecting the Google Client ID
     @Value("${google.clientId}")

@@ -7,6 +7,8 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+import java.time.LocalDateTime;
+import java.util.UUID;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Service
@@ -17,6 +19,44 @@ public class CustomerServiceImplementation implements CustomerService, UserDetai
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+    @Autowired
+    private EmailService emailService;
+
+    @Override
+    public String createPasswordResetToken(String email) {
+        Customers customer = repo.findByEmail(email);
+        if (customer == null) {
+            System.out.println("Password reset attempt for non-existant email: " + email);
+            return "success";
+        }
+
+        String token = UUID.randomUUID().toString();
+        customer.setResetToken(token);
+        customer.setResetTokenExpiry(LocalDateTime.now().plusHours(1));
+        repo.save(customer);
+
+        //send the email
+        emailService.sendPasswordResetEmail(customer.getEmail(), token);
+        return "Success";
+    }
+
+    @Override
+    public boolean resetPassword(String token, String newPassword) {
+        //find the user by the reset token
+        Customers customer = repo.findByResetToken(token);
+        //Check if token is valid and not expired
+        if (customer == null || customer.getResetTokenExpiry().isBefore(LocalDateTime.now())) {
+            return false;
+        }
+        //Token is valid! update the password
+        customer.setPassword(passwordEncoder.encode(newPassword));
+
+        //Invalidate the token
+        customer.setResetToken(null);
+        customer.setResetTokenExpiry(null);
+        repo.save(customer);
+        return true;
+    }
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {

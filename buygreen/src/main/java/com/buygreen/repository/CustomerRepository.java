@@ -8,4 +8,5 @@ import org.springframework.stereotype.Repository;
 public interface CustomerRepository extends JpaRepository <Customers, Long>{
 
     Customers findByEmail(String email);
+    Customers findByResetToken(String token);
 }

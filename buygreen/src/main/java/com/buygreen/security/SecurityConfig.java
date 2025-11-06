@@ -31,6 +31,8 @@ public class SecurityConfig {
                         .requestMatchers("/login").permitAll()
                         .requestMatchers("/signup").permitAll()
                         .requestMatchers("/auth/google").permitAll()
+                        .requestMatchers("/forgot-password").permitAll()
+                        .requestMatchers("/reset-password").permitAll()
                         .requestMatchers(HttpMethod.GET, "/products/all").permitAll() // Anyone can view products
                         .requestMatchers(HttpMethod.GET, "/products/{id}").permitAll() // Anyone can view one product
 

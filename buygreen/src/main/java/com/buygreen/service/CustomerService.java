@@ -10,4 +10,6 @@ public interface CustomerService {
 
     boolean changePassword(String email, String oldPassword, String newPassword);
 
+    String createPasswordResetToken(String email);
+    boolean resetPassword(String token, String newPassword);
 }
