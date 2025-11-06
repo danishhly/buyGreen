@@ -67,7 +67,7 @@ const response = await axios.post(
             if (customer.role == "admin") {
                 navigate("/AdminDashboard");
             } else {
-                navigate("/customerHome");
+                navigate("/CustomerHome");
             }
         } catch (error) {
             setMessage(error.response?.data?.message || "Google login failed.")

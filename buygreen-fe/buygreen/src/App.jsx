@@ -2,7 +2,6 @@ import { Routes, Route, Outlet } from "react-router-dom"
 import Home from "./Pages/Home.jsx"
 import Signup from "./Pages/Signup.jsx"
 import Login from "./Pages/Login.jsx"
-import ProfilePage from './Pages/ProfilePage.jsx';
 import AdminDashboard from "./Pages/AdminDashboard.jsx"
 import CustomerHome from "./Pages/CustomerHome.jsx"
 import CartPage from './Pages/CartPage.jsx';
