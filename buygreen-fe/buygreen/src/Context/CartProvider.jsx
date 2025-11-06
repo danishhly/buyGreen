@@ -1,6 +1,6 @@
 // src/Contexts/CartProvider.jsx
 import React, { useState, useEffect, useCallback } from 'react';
-import api from '../Api/axiosConfig';
+import api from '../api/axiosConfig';
 import { CartContext } from './CartContext'; // <-- Import the context
 
 // This file now only has ONE export: the component itself.
@@ -173,7 +173,7 @@ export const CartProvider = ({ children }) => {
         const customer = getCustomer();
         if (!customer) throw new Error("User is not logged in.");
 
-        const response = await api.get(`http://localhost:8080/orders/customer/${customer.id}`);
+        const response = await api.get(`/orders/customer/${customer.id}`);
         return response.data;
     }
 

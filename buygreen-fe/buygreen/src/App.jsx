@@ -8,6 +8,7 @@ import CustomerHome from "./Pages/CustomerHome.jsx"
 import CartPage from './Pages/CartPage.jsx';
 import OrderSuccess from './Pages/OrderSuccess.jsx';
 import Orders from './Pages/Orders.jsx';
+import Profile from './Pages/Profile.jsx';
 import { CartProvider } from './Context/CartProvider.jsx'
 import Navbar from './Component/Navbar.jsx';
 import React from 'react';
@@ -44,8 +45,8 @@ function App() {
             <Route path="/CustomerHome" element={<CustomerHome />} />
             <Route path="/cart" element={<CartPage />} />
             <Route path="/order-success" element={<OrderSuccess />} />
-            <Route path="/profile" element={<ProfilePage />} />
             <Route path="/orders" element={<Orders />} />
+            <Route path="/profile" element={<Profile />} />
             <Route path="/product/:productId" element={<ProductDetails />} />
           </Route>
         </Route>

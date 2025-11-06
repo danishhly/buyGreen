@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import api from "../Api/axiosConfig";
+import api from "../api/axiosConfig";
 
 function AdminDashboard() {
     const [products, setProducts] = useState([]);

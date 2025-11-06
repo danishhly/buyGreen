@@ -63,8 +63,17 @@ const Navbar = () => {
                         </div>
                     </div>
 
-                    {/* RIGHT SECTION: Cart Icon and Auth Buttons */}
+                    {/* RIGHT SECTION: Profile, Cart Icon and Auth Buttons */}
                     <div className="flex items-center gap-4">
+                        {customer && (
+                            <Link
+                                to="/profile"
+                                className="hidden sm:inline-flex items-center rounded-md border border-green-700 px-3 py-1.5 text-sm font-medium text-green-700 hover:bg-green-50 transition-colors"
+                                title="Profile"
+                            >
+                                Hi, {customer.name}
+                            </Link>
+                        )}
                         <Link to="/cart" className="relative text-gray-600 hover:text-green-700 p-2 rounded-md">
                             {/* ... cart svg ... */}
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">

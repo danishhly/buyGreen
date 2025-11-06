@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
-import api from '../Api/axiosConfig';
+import api from '../api/axiosConfig';
 import { useCart } from '../Hooks/UseCart';
 
 // --- LoadingSpinner (no changes) ---
@@ -33,16 +33,18 @@ const CustomerHome = () => {
     useEffect(() => {
         api.get("/products/all")
             .then((res) => {
-                const products = res.data;
+                const products = Array.isArray(res.data) ? res.data : [];
                 // Set both the master list and the displayed list
                 setAllProducts(products);
                 setFilteredProducts(products);
                 
                 // --- Automatically find all unique categories ---
                 // We use a Set to ensure each category name is unique
-                const uniqueCategories = [
-                    ...new Set(products.map(p => p.category.trim()))
-                ];
+                const uniqueCategories = [...new Set(
+                    products
+                        .map(p => (p && p.category != null ? String(p.category).trim() : ""))
+                        .filter(Boolean)
+                )];
                 setCategories(uniqueCategories);
             })
             .catch((err) => console.error("Error fetching products:", err))
@@ -74,9 +76,10 @@ const CustomerHome = () => {
 
         // 2. Apply category filter
         if (selectedCategory) {
-            productsToFilter = productsToFilter.filter(product =>
-                product.category.toLowerCase() === selectedCategory.toLowerCase()
-            );
+            productsToFilter = productsToFilter.filter(product => {
+                const category = product && product.category != null ? String(product.category) : "";
+                return category.toLowerCase() === selectedCategory.toLowerCase();
+            });
         }
 
         // 3. Update the list of products being displayed
