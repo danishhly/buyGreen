@@ -1,5 +1,6 @@
 package com.buygreen.security;
 
+import org.springframework.beans.factory.annotation.Autowired; // <-- IMPORT THIS
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -7,16 +8,16 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter; // <-- IMPORT THIS
 
 import static org.springframework.security.config.Customizer.withDefaults;
 
 @Configuration
 public class SecurityConfig {
 
-//    @Bean
-//    public PasswordEncoder passwordEncoder() {
-//        return new BCryptPasswordEncoder();
-//    }
+    // --- 1. INJECT THE FILTER ---
+    @Autowired
+    private JwtRequestFilter jwtRequestFilter;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -24,8 +25,7 @@ public class SecurityConfig {
                 .cors(withDefaults()) // Use global WebConfig CORS
                 .csrf(AbstractHttpConfigurer::disable) // Disable CSRF for stateless API
 
-                // --- THIS IS THE NEW PART ---
-                // Set up authorization rules
+                // --- 2. CONFIGURE STRICTER RULES ---
                 .authorizeHttpRequests(auth -> auth
                         // Public endpoints (no authentication needed)
                         .requestMatchers("/login").permitAll()
@@ -33,28 +33,34 @@ public class SecurityConfig {
                         .requestMatchers("/auth/google").permitAll()
                         .requestMatchers("/forgot-password").permitAll()
                         .requestMatchers("/reset-password").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/products/all").permitAll() // Anyone can view products
-                        .requestMatchers(HttpMethod.GET, "/products/{id}").permitAll() // Anyone can view one product
+                        .requestMatchers(HttpMethod.GET, "/products/all").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/products/{id}").permitAll()
 
                         // Admin-only endpoints
                         .requestMatchers("/products/add").hasRole("ADMIN")
                         .requestMatchers("/products/update/**").hasRole("ADMIN")
                         .requestMatchers("/products/delete/**").hasRole("ADMIN")
-                        .requestMatchers("/AdminDashboard").hasRole("ADMIN") // Just in case
+                        .requestMatchers("/AdminDashboard").hasRole("ADMIN")
 
-                        // Temporarily public API endpoints used by the SPA
-                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers("/cart/**").permitAll()
-                        .requestMatchers("/orders/**").permitAll()
-                        .requestMatchers("/payments/**").permitAll()
+                        // Customer/User endpoints (must be logged in)
+                        .requestMatchers("/customers/change-password").authenticated()
+                        .requestMatchers("/cart/**").authenticated()
+                        .requestMatchers("/orders/**").authenticated()
+                        .requestMatchers("/payments/**").authenticated()
+                        .requestMatchers("/wishlist/**").authenticated() // <-- SECURE NEW ENDPOINT
 
-                        // Temporarily allow all requests (remove when JWT auth is implemented)
-                        .anyRequest().permitAll()
+                        // Deny all other requests by default
+                        .anyRequest().authenticated()
                 )
                 // Make the session stateless
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 );
+
+        // --- 3. ADD THE JWT FILTER ---
+        // This tells Spring Security to use our filter to check for JWTs
+        // on every request before it tries to authenticate with username/password.
+        http.addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
