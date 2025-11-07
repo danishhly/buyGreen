@@ -87,7 +87,7 @@ public class Customers implements UserDetails {
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         //this tells Spring what role the user has
-        return List.of(new SimpleGrantedAuthority("ROLE_ " + this.role.toUpperCase()));
+        return List.of(new SimpleGrantedAuthority("ROLE_" + this.role.toUpperCase()));
     }
 
     @Override

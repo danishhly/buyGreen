@@ -8,6 +8,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
@@ -56,6 +57,11 @@ public class CustomerServiceImplementation implements CustomerService, UserDetai
         customer.setResetTokenExpiry(null);
         repo.save(customer);
         return true;
+    }
+
+    @Override
+    public List<Customers> getAllCustomers() {
+        return repo.findAll();
     }
 
     @Override

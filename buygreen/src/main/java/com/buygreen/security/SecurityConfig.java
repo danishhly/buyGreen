@@ -41,6 +41,7 @@ public class SecurityConfig {
                         .requestMatchers("/products/update/**").hasRole("ADMIN")
                         .requestMatchers("/products/delete/**").hasRole("ADMIN")
                         .requestMatchers("/AdminDashboard").hasRole("ADMIN")
+                        .requestMatchers("/admin/**").hasRole("ADMIN")
 
                         // Customer/User endpoints (must be logged in)
                         .requestMatchers("/customers/change-password").authenticated()

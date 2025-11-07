@@ -33,7 +33,7 @@ public class WishlistServiceImpl implements WishlistService {
         wishlistItem.setCustomerId(customerId);
         wishlistItem.setProductId(productId);
         wishlistItem.setProductName(product.getName());
-        wishlistItem.setProductImageUrl(product.getImageUrl());
+        wishlistItem.setProductImageUrl(String.valueOf(product.getImageUrls()));
         wishlistItem.setPrice(product.getPrice());
 
         return wishlistRepository.save(wishlistItem);
