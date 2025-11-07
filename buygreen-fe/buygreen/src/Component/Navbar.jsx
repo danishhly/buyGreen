@@ -1,15 +1,23 @@
-// src/components/Navbar.jsx
-
 import React, { useEffect, useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom'; 
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useCart } from '../Hooks/UseCart';
 
 const Navbar = () => {
     const { cartCount, wishlistCount } = useCart();
     const [customer, setCustomer] = useState(null);
     const [searchQuery, setSearchQuery] = useState('');
+    const [isScrolled, setIsScrolled] = useState(false);
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const navigate = useNavigate();
     const location = useLocation();
+
+    useEffect(() => {
+        const handleScroll = () => {
+            setIsScrolled(window.scrollY > 10);
+        };
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
 
     useEffect(() => {
         const storedCustomer = localStorage.getItem('customer');
@@ -24,16 +32,14 @@ const Navbar = () => {
             setCustomer(null);
         }
         
-        // Sync search query with URL
         const params = new URLSearchParams(location.search);
         const searchParam = params.get('search');
         if (searchParam) {
             setSearchQuery(searchParam);
         } else if (location.pathname === '/CustomerHome') {
-            // Clear search if on CustomerHome without search param
             setSearchQuery('');
         }
-    }, [location]); 
+    }, [location]);
 
     const handleLogout = () => {
         localStorage.removeItem('customer');
@@ -59,42 +65,50 @@ const Navbar = () => {
     ];
 
     const handleCategoryClick = (category) => {
-        setSearchQuery(''); // Clear search when selecting a category
+        setSearchQuery('');
         if (category) {
             navigate(`/CustomerHome?category=${encodeURIComponent(category)}`);
         } else {
             navigate('/CustomerHome');
         }
+        setMobileMenuOpen(false);
     };
 
     return (
         <>
-            {/* Top Header Bar */}
-            <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
+            <nav className={`fixed top-0 w-full z-50 transition-all duration-300 ${
+                isScrolled 
+                    ? 'glass-morphism shadow-lg' 
+                    : 'bg-white border-b border-gray-100'
+            }`}>
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                    {/* Top Row: Logo, Search, Icons */}
                     <div className="flex h-20 items-center justify-between">
-                        {/* Logo */}
-                        <div className="flex-shrink-0">
-                            <Link to="/CustomerHome" className="text-3xl font-bold text-gray-900 hover:text-green-700 transition-colors">
-                                BuyGreen<span className="ml-0 w-2 h-2 bg-green-700 rounded-full inline-block relative top-[1px]"></span>
-
+                        <div className="flex-shrink-0 group">
+                            <Link 
+                                to="/CustomerHome" 
+                                className="flex items-center gap-2 text-3xl font-bold text-gray-900 hover:text-green-600 transition-all duration-300"
+                            >
+                                <span className="relative">
+                                    BuyGreen
+                                    <span className="ml-0.5 w-1.5 h-1.5 bg-green-600 rounded-full inline-block animate-bounce-subtle"></span>
+                                </span>
                             </Link>
                         </div>
 
-                        {/* Search Bar */}
-                        <div className="flex-1 max-w-2xl mx-8 hidden md:block">
-                            <form onSubmit={handleSearch} className="relative">
+                        <div className="flex-1 max-w-2xl mx-8 hidden lg:block">
+                            <form onSubmit={handleSearch} className="relative group">
                                 <input
                                     type="text"
-                                    placeholder="Search"
+                                    placeholder="Search for eco-friendly products..."
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="w-full px-4 py-2 pl-10 pr-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none"
+                                    className="w-full px-6 py-3 pl-12 pr-4 border-2 border-gray-200 rounded-full 
+                                             focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none
+                                             transition-all duration-300 group-hover:border-green-300"
                                 />
                                 <button
                                     type="submit"
-                                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                                    className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-green-600 transition-colors"
                                 >
                                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -103,114 +117,150 @@ const Navbar = () => {
                             </form>
                         </div>
 
-                        {/* Right Icons */}
-                        <div className="flex items-center gap-4">
-                            {/* Account Icon */}
+                        <div className="flex items-center gap-3">
                             {customer && (
                                 <Link
                                     to="/profile"
-                                    className="text-gray-600 hover:text-green-700 transition-colors p-2"
+                                    className="hidden md:flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-green-600 
+                                             transition-all duration-300 rounded-lg hover:bg-green-50"
                                     title="Account"
                                 >
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                                        <circle cx="12" cy="7" r="4"></circle>
-                                    </svg>
+                                    <div className="w-9 h-9 bg-gradient-to-br from-green-400 to-emerald-600 rounded-full 
+                                                  flex items-center justify-center text-white font-semibold shadow-md">
+                                        {customer.name?.[0]?.toUpperCase() || 'U'}
+                                    </div>
+                                    <span className="hidden xl:block text-sm font-medium">{customer.name || 'Account'}</span>
                                 </Link>
                             )}
 
-                            {/* Wishlist Icon */}
                             <Link
-                            to="/wishlist"
-                                className="text-gray-600 hover:text-green-700 transition-colors p-2 relative"
+                                to="/wishlist"
+                                className="relative p-2.5 text-gray-600 hover:text-green-600 transition-all duration-300 
+                                         rounded-lg hover:bg-green-50 group"
                                 title="Wishlist"
                             >
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 group-hover:scale-110 transition-transform" 
+                                     fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
                                     <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
                                 </svg>
-                                {/* 3. Add wishlist count badge */}
                                 {wishlistCount > 0 && (
-                                    <span className="absolute -top-1 -right-1 bg-green-700 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                                    <span className="absolute -top-1 -right-1 gradient-green text-white text-xs font-bold 
+                                                   rounded-full h-5 w-5 flex items-center justify-center shadow-lg 
+                                                   animate-bounce-subtle">
                                         {wishlistCount}
                                     </span>
                                 )}
                             </Link>
 
-                            {/* Cart Icon */}
                             <Link 
                                 to="/cart" 
-                                className="relative text-gray-600 hover:text-green-700 transition-colors p-2"
+                                className="relative p-2.5 text-gray-600 hover:text-green-600 transition-all duration-300 
+                                         rounded-lg hover:bg-green-50 group"
                                 title="Shopping Bag"
                             >
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 group-hover:scale-110 transition-transform" 
+                                     fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
                                     <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
                                     <line x1="3" y1="6" x2="21" y2="6"></line>
                                     <path d="M16 10a4 4 0 0 1-8 0"></path>
                                 </svg>
                                 {cartCount > 0 && (
-                                    <span className="absolute -top-1 -right-1 bg-green-700 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                                    <span className="absolute -top-1 -right-1 gradient-green text-white text-xs font-bold 
+                                                   rounded-full h-5 w-5 flex items-center justify-center shadow-lg 
+                                                   animate-bounce-subtle">
                                         {cartCount}
                                     </span>
                                 )}
                             </Link>
 
-                            {/* Login/Logout */}
                             {customer ? (
                                 <button
                                     onClick={handleLogout}
-                                    className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-green-700 transition-colors"
+                                    className="hidden md:block px-5 py-2.5 text-sm font-medium text-gray-700 
+                                             hover:text-green-600 transition-colors rounded-lg hover:bg-green-50"
                                 >
                                     Logout
                                 </button>
                             ) : (
                                 <Link 
                                     to="/login" 
-                                    className="px-4 py-2 text-sm font-medium text-gray-700 hover:text-green-700 transition-colors"
+                                    className="px-6 py-2.5 text-sm font-semibold text-white gradient-green 
+                                             rounded-full hover:shadow-lg hover:scale-105 transition-all duration-300"
                                 >
                                     Login
                                 </Link>
                             )}
+
+                            <button
+                                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                                className="lg:hidden p-2 text-gray-600 hover:text-green-600 transition-colors"
+                            >
+                                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    {mobileMenuOpen ? (
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                    ) : (
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                                    )}
+                                </svg>
+                            </button>
                         </div>
                     </div>
 
-                    {/* Navigation Categories */}
-                    <div className="hidden md:flex items-center justify-center border-t border-gray-200">
+                    <div className="hidden lg:flex items-center justify-center border-t border-gray-100">
                         <ul className="flex items-center gap-8 py-4">
                             {navCategories.map((category) => (
                                 <li key={category.name}>
                                     <button
                                         onClick={() => handleCategoryClick(category.category)}
-                                        className="text-sm font-medium text-gray-700 hover:text-green-700 transition-colors uppercase tracking-wide"
+                                        className="relative text-sm font-semibold text-gray-700 hover:text-green-600 
+                                                 transition-colors uppercase tracking-wide group"
                                     >
                                         {category.name}
+                                        <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-green-600 
+                                                       group-hover:w-full transition-all duration-300"></span>
                                     </button>
                                 </li>
                             ))}
                         </ul>
                     </div>
                 </div>
-            </nav>
 
-            {/* Mobile Search Bar */}
-            <div className="md:hidden bg-white border-b border-gray-200 px-4 py-3">
-                <form onSubmit={handleSearch} className="relative">
-                    <input
-                        type="text"
-                        placeholder="Search"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full px-4 py-2 pl-10 pr-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none"
-                    />
-                    <button
-                        type="submit"
-                        className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                    >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                        </svg>
-                    </button>
-                </form>
-            </div>
+                {mobileMenuOpen && (
+                    <div className="lg:hidden border-t border-gray-100 bg-white animate-slide-down">
+                        <div className="px-4 py-4 space-y-3">
+                            <form onSubmit={handleSearch} className="relative mb-4">
+                                <input
+                                    type="text"
+                                    placeholder="Search..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="w-full px-4 py-3 pl-10 border-2 border-gray-200 rounded-lg 
+                                             focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none"
+                                />
+                                <button
+                                    type="submit"
+                                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                                >
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                    </svg>
+                                </button>
+                            </form>
+                            {navCategories.map((category) => (
+                                <button
+                                    key={category.name}
+                                    onClick={() => handleCategoryClick(category.category)}
+                                    className="w-full text-left px-4 py-3 text-sm font-medium text-gray-700 
+                                             hover:bg-green-50 hover:text-green-600 rounded-lg transition-colors"
+                                >
+                                    {category.name}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                )}
+            </nav>
+            <div className="h-36 lg:h-[140px]"></div>
         </>
     );
 };

@@ -1,37 +1,61 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import api from '../api/axiosConfig'; // Use the correct lowercase 'api' path
+import api from '../api/axiosConfig';
 import { useCart } from '../Hooks/UseCart';
-import ImageSlider from '../Component/ImageSlider.jsx'; // Import the slider
+import ImageSlider from '../Component/ImageSlider'
 
-// --- LoadingSpinner ---
 const LoadingSpinner = () => (
-    <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-green-700"></div>
+    <div className="flex justify-center items-center min-h-screen">
+        <div className="relative">
+            <div className="w-20 h-20 border-4 border-green-200 border-t-green-600 rounded-full animate-spin"></div>
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+                <div className="w-10 h-10 gradient-green rounded-full opacity-20 animate-pulse"></div>
+            </div>
+        </div>
     </div>
 );
 
-// --- Component for Stock Display ---
 const StockDisplay = ({ stock }) => {
     if (stock > 10) {
-        return <p className="text-green-600 font-semibold">In Stock</p>;
+        return (
+            <div className="flex items-center gap-2 text-green-600 font-semibold">
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+                In Stock
+            </div>
+        );
     }
     if (stock > 0) {
-        return <p className="text-yellow-600 font-semibold">Only {stock} left!</p>;
+        return (
+            <div className="flex items-center gap-2 text-yellow-600 font-semibold">
+                <svg className="w-5 h-5 animate-bounce-subtle" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+                Only {stock} left!
+            </div>
+        );
     }
-    return <p className="text-red-600 font-semibold">Out of Stock</p>;
+    return (
+        <div className="flex items-center gap-2 text-red-600 font-semibold">
+            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+            </svg>
+            Out of Stock
+        </div>
+    );
 };
 
 const HeartIcon = ({ inWishlist }) => (
-    <svg 
-        xmlns="http://www.w3.org/2000/svg" 
-        viewBox="0 0 24 24" 
-        fill={inWishlist ? "currentColor" : "none"} 
-        stroke="currentColor" 
+    <svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 24 24"
+        fill={inWishlist ? "currentColor" : "none"}
+        stroke="currentColor"
         strokeWidth="2"
-        className={`w-6 h-6 transition-colors ${
-            inWishlist 
-                ? 'text-red-500 fill-red-500' 
+        className={`w-6 h-6 transition-all ${
+            inWishlist
+                ? 'text-red-500 fill-red-500 scale-110'
                 : 'text-gray-400 hover:text-red-400'
         }`}
     >
@@ -42,30 +66,31 @@ const HeartIcon = ({ inWishlist }) => (
 const ProductDetails = () => {
     const [product, setProduct] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [fetchError, setFetchError] = useState(null);
     const [quantity, setQuantity] = useState(1);
+    const [isInWishlist, setIsInWishlist] = useState(false);
 
-    const[isInWishlist, setIsInWishlist] = useState(false);
-    
     const { productId } = useParams();
-    const{ addToCart, addToWishlist, removeFromWishlist, wishlistItems } = useCart();
-
+    const { addToCart, addToWishlist, removeFromWishlist, wishlistItems } = useCart();
     const navigate = useNavigate();
 
     useEffect(() => {
-        if(product) {
+        if (product) {
             const inList = wishlistItems.some(item => item.productId === product.id);
             setIsInWishlist(inList);
         }
-    },[wishlistItems, product]);
+    }, [wishlistItems, product]);
 
     useEffect(() => {
         const fetchProduct = async () => {
             try {
                 const response = await api.get(`/products/${productId}`);
                 setProduct(response.data);
+                setFetchError(null);
             } catch (err) {
                 console.error("Error fetching product:", err);
-                navigate('/CustomerHome');
+                setFetchError(err.message || "Failed to load product");
+                setProduct(null);
             } finally {
                 setIsLoading(false);
             }
@@ -73,7 +98,6 @@ const ProductDetails = () => {
         fetchProduct();
     }, [productId, navigate]);
 
-    // --- Handlers for quantity and cart ---
     const handleIncrease = () => {
         if (quantity < product.stockQuantity) {
             setQuantity(prev => prev + 1);
@@ -86,23 +110,32 @@ const ProductDetails = () => {
         }
     };
 
-    const handleAddToCart = () => {
+    const handleAddToCart = async () => {
+        if (!product) {
+            alert("Product information is not available. Please try refreshing the page.");
+            return;
+        }
+        
         try {
-            addToCart(product, quantity);
-            alert(`${quantity} x ${product.name} added to cart!`);
+            await addToCart(product, quantity);
+            alert(`${quantity} x ${product.name} added to cart! ✅`);
         } catch (err) {
-            console.log("went wrong", err);
+            console.error("Error adding to cart:", err);
             if (err.message && (err.message.includes("Not enough stock") || err.message.includes("User is not logged in"))) {
                 alert(err.message);
             } else {
-                alert("Failed to add item. Please log in first.");
+                alert("Please log in to add items to your cart.");
                 navigate('/login');
             }
         }
     };
 
     const handleWishlistToggle = async () => {
-        // Check if user is logged in first
+        if (!product) {
+            alert("Product information is not available. Please try refreshing the page.");
+            return;
+        }
+        
         const storedCustomer = localStorage.getItem('customer');
         if (!storedCustomer) {
             alert("Please log in to add items to your wishlist.");
@@ -111,13 +144,13 @@ const ProductDetails = () => {
         }
 
         try {
-            if(isInWishlist) {
+            if (isInWishlist) {
                 await removeFromWishlist(product.id);
             } else {
                 await addToWishlist(product.id);
             }
-        } catch(err) {
-            console.error("Wishlist error", err);
+        } catch (err) {
+            console.error("Wishlist error:", err);
             if (err.message && err.message.includes("User is not logged in")) {
                 alert("Please log in to manage your wishlist.");
                 navigate("/login");
@@ -131,96 +164,177 @@ const ProductDetails = () => {
         return <LoadingSpinner />;
     }
 
-    if (!product) {
-        return <p>Product not found.</p>;
+    if (fetchError || !product) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gray-50">
+                <div className="bg-white rounded-2xl shadow-lg p-12 text-center max-w-md">
+                    <div className="w-20 h-20 gradient-green rounded-full flex items-center justify-center 
+                                  mx-auto mb-6 opacity-20">
+                        <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
+                                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                    </div>
+                    <h2 className="text-2xl font-bold text-gray-900 mb-3">
+                        {fetchError ? 'Unable to Load Product' : 'Product Not Found'}
+                    </h2>
+                    <p className="text-gray-600 mb-6">
+                        {fetchError || "The product you're looking for doesn't exist or has been removed."}
+                    </p>
+                    <div className="flex gap-3 justify-center">
+                        <button
+                            onClick={() => window.location.reload()}
+                            className="px-5 py-2.5 border-2 border-gray-300 text-gray-700 rounded-lg 
+                                     hover:border-gray-400 hover:bg-gray-50 transition-all font-medium"
+                        >
+                            Try Again
+                        </button>
+                        <Link
+                            to="/CustomerHome"
+                            className="px-5 py-2.5 gradient-green text-white rounded-lg font-semibold
+                                     hover:shadow-lg hover:scale-105 transition-all duration-300"
+                        >
+                            Back to Shop
+                        </Link>
+                    </div>
+                </div>
+            </div>
+        );
     }
 
     const isOutOfStock = product.stockQuantity <= 0;
-
-    // This is the array for the slider.
-    // Replace these with real URLs when you have them.
-    const productImages = [
-        product.imageUrl,
-        "https://via.placeholder.com/600x600/eeeeee/999999?text=Image+2", // Placeholder 2
-        "https://via.placeholder.com/600x600/eeeeee/999999?text=Image+3"  // Placeholder 3
-    ];
+    const productImages = (product.imageUrls && product.imageUrls.length > 0)
+        ? product.imageUrls
+        : [
+            product.imageUrl || 'https://via.placeholder.com/600x600?text=Product+Image',
+            'https://via.placeholder.com/600x600/eeeeee/999999?text=Image+2',
+            'https://via.placeholder.com/600x600/eeeeee/999999?text=Image+3'
+        ];
 
     return (
-        <div className="max-w-4xl mx-auto p-8">
-            <Link to="/CustomerHome" className="text-green-700 hover:underline mb-4 block">
-                &larr; Back to all products
-            </Link>
-            
-            {/* --- THIS IS THE 2-COLUMN LAYOUT --- */}
-            <div className="flex flex-col md:flex-row gap-8">
-                
-                {/* Column 1: Image Slider */}
-                <div className="md:w-1/2 h-96 rounded-lg shadow-lg overflow-hidden">
-                    <ImageSlider images={productImages} />
-                </div>
-                
-                {/* Column 2: Product Info & Actions */}
-                <div className="md:w-1/2">
-                    <p className="text-gray-500 text-sm font-semibold mb-2 uppercase">
-                        {product.category}
-                    </p>
-                    <h1 className="text-3xl font-bold mb-3">{product.name}</h1>
-                    <p className="text-gray-600 text-lg mb-4">{product.description}</p>
-                    
-                    <div className="mb-4">
-                        <StockDisplay stock={product.stockQuantity} />
-                    </div>
-                    
-                    <p className="price text-green-700 font-bold mb-6 text-4xl">
-                        ${product.price.toFixed(2)}
-                    </p>
-                    
-                    <div className="flex items-center gap-4 mb-6">
-                        <p className="font-semibold">Quantity:</p>
-                        <div className="flex items-center border rounded">
-                            <button 
-                                onClick={handleDecrease} 
-                                className="px-4 py-2 text-lg disabled:opacity-50"
-                                disabled={quantity <= 1}
-                            >
-                                -
-                            </button>
-                            <span className="px-4 py-2 text-lg">{quantity}</span>
-                            <button 
-                                onClick={handleIncrease} 
-                                className="px-4 py-2 text-lg disabled:opacity-50"
-                                disabled={quantity >= product.stockQuantity}
-                            >
-                                +
-                            </button>
+        <div className="min-h-screen bg-gray-50 py-12">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <Link
+                    to="/CustomerHome"
+                    className="inline-flex items-center gap-2 text-green-600 hover:text-green-700 font-medium mb-8 
+                             transition-colors group"
+                >
+                    <svg className="w-5 h-5 group-hover:-translate-x-1 transition-transform" fill="none" 
+                         stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                    Back to Shop
+                </Link>
+
+                <div className="bg-white rounded-3xl shadow-lg overflow-hidden">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 p-6 lg:p-12">
+                        <div className="rounded-2xl overflow-hidden shadow-xl">
+                            <div className="aspect-square">
+                                <ImageSlider images={productImages} />
+                            </div>
                         </div>
-                    </div>
-                    
-                    {/* Action Buttons: Add to Cart and Wishlist */}
-                    <div className="flex items-center gap-3 mb-6">
-                        <button 
-                            onClick={handleAddToCart}
-                            className="flex-1 bg-green-700 text-white py-3 px-6 rounded-md hover:bg-green-800 transition-colors text-lg font-semibold disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                            disabled={isOutOfStock}
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
-                                <line x1="3" y1="6" x2="21" y2="6"></line>
-                                <path d="M16 10a4 4 0 0 1-8 0"></path>
-                            </svg>
-                            {isOutOfStock ? 'Out of Stock' : 'Add to Cart'}
-                        </button>
-                        <button 
-                            onClick={handleWishlistToggle}
-                            className={`p-3 border-2 rounded-md transition-all ${
-                                isInWishlist 
-                                    ? 'border-red-300 bg-red-50 hover:bg-red-100' 
-                                    : 'border-gray-300 hover:border-gray-400 hover:bg-gray-50'
-                            }`}
-                            title={isInWishlist ? 'Remove from Wishlist' : 'Add to Wishlist'}
-                        >
-                            <HeartIcon inWishlist={isInWishlist} />
-                        </button>
+
+                        <div className="flex flex-col justify-center">
+                            <p className="text-sm text-gray-500 uppercase tracking-wider font-semibold mb-3">
+                                {product.category || 'Product'}
+                            </p>
+
+                            <h1 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
+                                {product.name}
+                            </h1>
+
+                            <p className="text-lg text-gray-600 mb-6 leading-relaxed">
+                                {product.description || 'No description available.'}
+                            </p>
+
+                            <div className="mb-6">
+                                <StockDisplay stock={product.stockQuantity} />
+                            </div>
+
+                            <div className="flex items-baseline gap-4 mb-8">
+                                <span className="text-5xl font-bold text-green-600">
+                                    ${product.price.toFixed(2)}
+                                </span>
+                            </div>
+
+                            <div className="flex items-center gap-4 mb-8">
+                                <label className="text-lg font-semibold text-gray-700">Quantity:</label>
+                                <div className="flex items-center border-2 border-gray-200 rounded-xl overflow-hidden">
+                                    <button
+                                        onClick={handleDecrease}
+                                        className="px-5 py-3 text-xl font-bold text-gray-700 hover:bg-gray-100 
+                                                 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                                        disabled={quantity <= 1}
+                                    >
+                                        −
+                                    </button>
+                                    <span className="px-6 py-3 text-xl font-bold text-gray-900 min-w-[4rem] text-center">
+                                        {quantity}
+                                    </span>
+                                    <button
+                                        onClick={handleIncrease}
+                                        className="px-5 py-3 text-xl font-bold text-gray-700 hover:bg-gray-100 
+                                                 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                                        disabled={quantity >= product.stockQuantity}
+                                    >
+                                        +
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="flex items-center gap-4">
+                                <button
+                                    onClick={handleAddToCart}
+                                    disabled={isOutOfStock}
+                                    className="flex-1 gradient-green text-white py-4 px-8 rounded-xl font-bold text-lg
+                                             hover:shadow-2xl hover:scale-105 transition-all duration-300
+                                             disabled:bg-gray-300 disabled:cursor-not-allowed disabled:hover:scale-100
+                                             flex items-center justify-center gap-3"
+                                >
+                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                                              d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                                    </svg>
+                                    {isOutOfStock ? 'Out of Stock' : 'Add to Cart'}
+                                </button>
+
+                                <button
+                                    onClick={handleWishlistToggle}
+                                    className={`p-4 border-2 rounded-xl transition-all hover:scale-110 ${
+                                        isInWishlist
+                                            ? 'border-red-300 bg-red-50 hover:bg-red-100'
+                                            : 'border-gray-300 hover:border-gray-400 hover:bg-gray-50'
+                                    }`}
+                                    title={isInWishlist ? 'Remove from Wishlist' : 'Add to Wishlist'}
+                                >
+                                    <HeartIcon inWishlist={isInWishlist} />
+                                </button>
+                            </div>
+
+                            <div className="mt-8 pt-8 border-t border-gray-200">
+                                <h3 className="font-semibold text-gray-900 mb-4">Product Features</h3>
+                                <ul className="space-y-3">
+                                    <li className="flex items-center gap-3 text-gray-600">
+                                        <svg className="w-5 h-5 text-green-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                        </svg>
+                                        Eco-friendly and sustainable
+                                    </li>
+                                    <li className="flex items-center gap-3 text-gray-600">
+                                        <svg className="w-5 h-5 text-green-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                        </svg>
+                                        High quality materials
+                                    </li>
+                                    <li className="flex items-center gap-3 text-gray-600">
+                                        <svg className="w-5 h-5 text-green-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                        </svg>
+                                        Free shipping on orders over $50
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

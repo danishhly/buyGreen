@@ -27,7 +27,7 @@ export const CartProvider = ({ children }) => {
             return null;
         }
     };
-    
+
     // --- CART FUNCTIONS ---
     const fetchCart = useCallback(async () => {
         const customer = getCustomer();
@@ -66,7 +66,7 @@ export const CartProvider = ({ children }) => {
                     headers: { 'Content-Type': 'application/json' }
                 }
             );
-            if(response.data != "Item added to cart") {
+            if (response.data != "Item added to cart") {
                 throw new Error(response.data);
             }
             await fetchCart(); // Refresh cart
@@ -109,7 +109,7 @@ export const CartProvider = ({ children }) => {
         setIsWishlistLoading(true);
         try {
             // This endpoint is secured and will use the token from axiosConfig
-            const res = await api.get('/wishlist'); 
+            const res = await api.get('/wishlist');
             setWishlistItems(res.data);
         } catch (err) {
             console.error("Error fetching wishlist:", err);
@@ -121,8 +121,7 @@ export const CartProvider = ({ children }) => {
     const addToWishlist = async (productId) => {
         if (!getCustomer()) throw new Error("User is not logged in.");
         try {
-            // Backend expects 'prodcutId' (typo in backend DTO)
-            await api.post('/wishlist/add', { productId: productId });
+            await api.post('/wishlist/add', { productId });
             await fetchWishlist(); // Refresh wishlist
         } catch (err) {
             console.error("Error adding to wishlist:", err);
@@ -133,8 +132,7 @@ export const CartProvider = ({ children }) => {
     const removeFromWishlist = async (productId) => {
         if (!getCustomer()) throw new Error("User is not logged in.");
         try {
-            // Backend expects 'prodcutId' (typo in backend DTO)
-            await api.post('/wishlist/remove', { productId: productId });
+            await api.post('/wishlist/remove', { productId });
             await fetchWishlist(); // Refresh wishlist
         } catch (err) {
             console.error("Error removing from wishlist:", err);
