@@ -12,47 +12,94 @@ const OrderSuccess = () => {
     }
 
     return (
-        <div className="max-w-2xl mx-auto p-6 text-center">
-            <div className="bg-green-50 border border-green-200 rounded-lg p-8">
-                <div className="text-4xl mb-4">🎉</div>
-                <h1 className="text-3xl font-bold text-green-700 mb-2">Order Successful!</h1>
-                <p className="text-gray-600 mb-6">
-                    Thank you for your purchase. Your order ID is
-                    <span className="font-semibold text-green-700"> #{order.id}</span>.
-                </p>
+        <div className="min-h-screen bg-gray-50">
+            <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                {/* Success Message Card */}
+                <div className="bg-white rounded-lg shadow-lg border border-gray-100 p-8 md:p-12 text-center mb-8">
+                    {/* Success Icon */}
+                    <div className="mb-6 flex justify-center">
+                        <div className="h-20 w-20 bg-green-100 rounded-full flex items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-green-700">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                        </div>
+                    </div>
+                    
+                    <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">Order Successful!</h1>
+                    <p className="text-lg text-gray-600 mb-2">
+                        Thank you for your purchase. Your order has been confirmed.
+                    </p>
+                    <p className="text-sm text-gray-500">
+                        Order ID: <span className="font-semibold text-green-700">#{order.id}</span>
+                    </p>
+                </div>
 
-                <div className="text-left bg-white rounded-md shadow-sm p-6 border border-green-100">
-                    <h2 className="text-xl font-semibold mb-3">Order Summary</h2>
-                    <ul className="space-y-2">
-                        {order.items?.map((item) => (
-                            <li key={item.id} className="flex justify-between text-gray-700">
-                                <span>{item.productName} × {item.quantity}</span>
-                                <span>${item.price}</span>
-                            </li>
+                {/* Order Summary Card */}
+                <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 md:p-8 mb-8">
+                    <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-700">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                            <polyline points="10 9 9 9 8 9"></polyline>
+                        </svg>
+                        Order Summary
+                    </h2>
+                    
+                    <div className="space-y-4 mb-6">
+                        {order.items?.map((item, index) => (
+                            <div key={item.id || index} className="flex justify-between items-center py-4 border-b border-gray-100 last:border-0">
+                                <div className="flex-1">
+                                    <p className="text-lg font-semibold text-gray-900">{item.productName}</p>
+                                    <p className="text-sm text-gray-500">Quantity: {item.quantity}</p>
+                                </div>
+                                <div className="text-right ml-4">
+                                    <p className="text-lg font-bold text-gray-900">
+                                        ${(item.price * item.quantity).toFixed(2)}
+                                    </p>
+                                    {item.quantity > 1 && (
+                                        <p className="text-xs text-gray-500">${item.price.toFixed(2)} each</p>
+                                    )}
+                                </div>
+                            </div>
                         ))}
-                    </ul>
+                    </div>
 
-                    <div className="mt-4 pt-4 border-t flex justify-between font-semibold text-lg">
-                        <span>Total</span>
-                        <span>${order.totalAmount}</span>
+                    <div className="pt-6 border-t-2 border-gray-200">
+                        <div className="flex justify-between items-center">
+                            <span className="text-xl font-semibold text-gray-700">Total</span>
+                            <span className="text-3xl font-bold text-green-700">
+                                ${typeof order.totalAmount === 'number' ? order.totalAmount.toFixed(2) : parseFloat(order.totalAmount).toFixed(2)}
+                            </span>
+                        </div>
                     </div>
                 </div>
 
-                <div className="mt-6 flex justify-center gap-4">
+                {/* Action Buttons */}
+                <div className="flex flex-col sm:flex-row justify-center gap-4">
                     <Link
                         to="/CustomerHome"
-                        className="bg-green-700 text-white px-6 py-2 rounded-md hover:bg-green-800 transition-colors"
+                        className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 bg-green-700 text-white px-8 py-4 rounded-lg hover:bg-green-800 transition-colors font-semibold text-lg"
                     >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                        </svg>
                         Continue Shopping
                     </Link>
                     <Link
                         to="/orders"
-                        className="border border-green-700 text-green-700 px-6 py-2 rounded-md hover:bg-green-50 transition-colors"
+                        className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 border-2 border-green-700 text-green-700 px-8 py-4 rounded-lg hover:bg-green-50 transition-colors font-semibold text-lg"
                     >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+                            <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+                        </svg>
                         View Orders
                     </Link>
                 </div>
-            </div>
+            </main>
         </div>
     );
 };

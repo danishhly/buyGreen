@@ -23,12 +23,20 @@ const CustomerHome = () => {
     const [selectedCategory, setSelectedCategory] = useState("");
     const [categories, setCategories] = useState([]);
 
-    // Check for search query in URL
+    // Check for search query and category in URL
     useEffect(() => {
         const params = new URLSearchParams(location.search);
         const searchParam = params.get('search');
+        const categoryParam = params.get('category');
         if (searchParam) {
             setSearchTerm(searchParam);
+        } else {
+            setSearchTerm("");
+        }
+        if (categoryParam) {
+            setSelectedCategory(categoryParam);
+        } else {
+            setSelectedCategory("");
         }
     }, [location]);
 
@@ -131,44 +139,6 @@ const CustomerHome = () => {
 
             {/* Main Content */}
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                {/* Search and Filter Section */}
-                <div className="mb-8 bg-white rounded-lg shadow-sm p-6">
-                    <div className="mb-4">
-                        <input
-                            type="text"
-                            placeholder="Search products..."
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                        />
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                        <button
-                            onClick={() => setSelectedCategory("")}
-                            className={`px-6 py-2 rounded-full font-semibold text-sm transition-all ${
-                                selectedCategory === "" 
-                                    ? 'bg-gray-900 text-white shadow-md' 
-                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                            }`}
-                        >
-                            All Products
-                        </button>
-                        {categories.map(category => (
-                            <button
-                                key={category}
-                                onClick={() => setSelectedCategory(category)}
-                                className={`px-6 py-2 rounded-full font-semibold text-sm transition-all ${
-                                    selectedCategory === category 
-                                        ? 'bg-gray-900 text-white shadow-md' 
-                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                                }`}
-                            >
-                                {category}
-                            </button>
-                        ))}
-                    </div>
-                </div>
-
                 {/* Results Count */}
                 {!isLoadingProducts && (
                     <div className="mb-6">

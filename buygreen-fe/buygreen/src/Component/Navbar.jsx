@@ -23,6 +23,16 @@ const Navbar = () => {
         } else {
             setCustomer(null);
         }
+        
+        // Sync search query with URL
+        const params = new URLSearchParams(location.search);
+        const searchParam = params.get('search');
+        if (searchParam) {
+            setSearchQuery(searchParam);
+        } else if (location.pathname === '/CustomerHome') {
+            // Clear search if on CustomerHome without search param
+            setSearchQuery('');
+        }
     }, [location]); 
 
     const handleLogout = () => {
@@ -43,10 +53,19 @@ const Navbar = () => {
     };
 
     const navCategories = [
-        { name: "WHAT'S NEW", path: "/CustomerHome" },
-        { name: "ALL PRODUCTS", path: "/CustomerHome" },
-        { name: "SALE", path: "/CustomerHome" },
+        { name: "WHAT'S NEW", path: "/CustomerHome", category: "new" },
+        { name: "ALL PRODUCTS", path: "/CustomerHome", category: "" },
+        { name: "SALE", path: "/CustomerHome", category: "sale" },
     ];
+
+    const handleCategoryClick = (category) => {
+        setSearchQuery(''); // Clear search when selecting a category
+        if (category) {
+            navigate(`/CustomerHome?category=${encodeURIComponent(category)}`);
+        } else {
+            navigate('/CustomerHome');
+        }
+    };
 
     return (
         <>
@@ -58,7 +77,8 @@ const Navbar = () => {
                         {/* Logo */}
                         <div className="flex-shrink-0">
                             <Link to="/CustomerHome" className="text-3xl font-bold text-gray-900 hover:text-green-700 transition-colors">
-                                BuyGreen.
+                                BuyGreen<span className="ml-0 w-2 h-2 bg-green-700 rounded-full inline-block relative top-[1px]"></span>
+
                             </Link>
                         </div>
 
@@ -151,12 +171,12 @@ const Navbar = () => {
                         <ul className="flex items-center gap-8 py-4">
                             {navCategories.map((category) => (
                                 <li key={category.name}>
-                                    <Link
-                                        to={category.path}
+                                    <button
+                                        onClick={() => handleCategoryClick(category.category)}
                                         className="text-sm font-medium text-gray-700 hover:text-green-700 transition-colors uppercase tracking-wide"
                                     >
                                         {category.name}
-                                    </Link>
+                                    </button>
                                 </li>
                             ))}
                         </ul>
