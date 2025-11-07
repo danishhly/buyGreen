@@ -16,7 +16,7 @@ import ForgotPassword from "./Pages/ForgotPassword.jsx";
 import ResetPassword from "./Pages/ResetPassword.jsx";
 import AdminRoute from "./Component/AdminRoute.jsx";
 import CustomerRoute from "./Component/CustomerRoute.jsx";
-
+import WishlistPage from "./Pages/WishlistPage.jsx";
 const AppLayout = () => (
   <>
     <Navbar />
@@ -50,6 +50,7 @@ function App() {
             <Route path="/orders" element={<Orders />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/product/:productId" element={<ProductDetails />} />
+            <Route path="/wishlist" element={<WishlistPage />} />
           </Route>
         </Route>
 

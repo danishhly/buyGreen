@@ -5,36 +5,30 @@ import { CartContext } from './CartContext'; // <-- Import the context
 
 // This file now only has ONE export: the component itself.
 export const CartProvider = ({ children }) => {
+    // --- CART STATE ---
     const [cartItems, setCartItems] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
 
-    const parseStoredValue = (value) => {
-        if (value === null || value === undefined) return null;
-        try {
-            return JSON.parse(value);
-        } catch (err) {
-            return value;
-        }
-    };
+    // --- NEW WISHLIST STATE ---
+    const [wishlistItems, setWishlistItems] = useState([]);
+    const [isWishlistLoading, setIsWishlistLoading] = useState(false);
 
-   // --- THIS IS THE FIX ---
     const getCustomer = () => {
         const storedCustomer = localStorage.getItem('customer');
         if (!storedCustomer) {
-            return null; // No user found
+            return null;
         }
         try {
-            // Parse the full customer object
             const customer = JSON.parse(storedCustomer);
-            return customer; // Return the whole object { id, name, email, role }
+            return customer;
         } catch (err) {
             console.error("Failed to parse customer from localStorage", err);
             return null;
         }
     };
     
-
+    // --- CART FUNCTIONS ---
     const fetchCart = useCallback(async () => {
         const customer = getCustomer();
         if (!customer) {
@@ -43,92 +37,112 @@ export const CartProvider = ({ children }) => {
         }
         setIsLoading(true);
         try {
-           //const token = localStorage.getItem('authToken');
-            // I'm assuming your endpoint needs the customer ID
             const res = await api.get(`/cart/${customer.id}`);
-           // {  
-            //    headers: {  
-            //        'Authorization': `Bearer ${token}`  
-            //    } 
-          //  });
             setCartItems(res.data);
         } catch (err) {
             console.error("Error fetching cart:", err);
+            // Handle 401/403 (Token Expired) later if needed
             setError("Could not load cart.");
         } finally {
             setIsLoading(false);
         }
     }, []);
 
-   const addToCart = async (product, quantity = 1) => {
-    const customer = getCustomer();
-    if (!customer) throw new Error("User is not logged in.");
+    const addToCart = async (product, quantity = 1) => {
+        const customer = getCustomer();
+        if (!customer) throw new Error("User is not logged in.");
 
-    try {
-        // ✅ CHECK TOKEN FIRST (before making request)
-        //const token = localStorage.getItem('authToken');
-        //if (!token) {
-       //     throw new Error("User is not logged in. No authentication token found.");
-       // }
-
-        // ✅ SEND TOKEN IN HEADERS
-       const response = await api.post(
-            "/cart/add",
-            {
-                customerId: customer.id,
-                productId: product.id,
-                productName: product.name,
-                price: product.price,
-                quantity: quantity
-            },
-            {
-                headers: {
-                    'Content-Type': 'application/json',
-              //      'Authorization': `Bearer ${token}` // ✅ Send token here
+        try {
+            const response = await api.post(
+                "/cart/add",
+                {
+                    customerId: customer.id,
+                    productId: product.id,
+                    productName: product.name,
+                    price: product.price,
+                    quantity: quantity
+                },
+                {
+                    headers: { 'Content-Type': 'application/json' }
                 }
+            );
+            if(response.data != "Item added to cart") {
+                throw new Error(response.data);
             }
-        );
-        if(response.data != "Item added to cart") {
-            throw new Error(response.data);
+            await fetchCart(); // Refresh cart
+        } catch (err) {
+            console.error("Error adding to cart:", err);
+            throw err;
         }
+    };
 
-        await fetchCart();
-    } catch (err) {
-        console.error("Error adding to cart:", err);
-        throw err;
-    }
-};
+    const decrementFromCart = async (productId) => {
+        const customer = getCustomer();
+        if (!customer) throw new Error("User is not logged in.");
 
-   const decrementFromCart = async (productId) => {
-    const customer = getCustomer();
-    if (!customer) throw new Error("User is not logged in.");
-
-    try {
-        await api.put(
-            "/cart/decrement",
-            {
-                customerId: customer.id,
-                productId
-            },
-            {
-                headers: {
-                    'Content-Type': 'application/json',
+        try {
+            await api.put(
+                "/cart/decrement",
+                {
+                    customerId: customer.id,
+                    productId
+                },
+                {
+                    headers: { 'Content-Type': 'application/json' }
                 }
-            }
-        );
+            );
+            await fetchCart(); // Refresh cart
+        } catch (err) {
+            console.error("Error decrementing cart item:", err);
+            throw err;
+        }
+    };
 
-        await fetchCart();
-    } catch (err) {
-        console.error("Error decrementing cart item:", err);
-        throw err;
-    }
-};
+    // --- NEW WISHLIST FUNCTIONS ---
 
-    useEffect(() => {
-        fetchCart();
-    }, [fetchCart]);
+    const fetchWishlist = useCallback(async () => {
+        const customer = getCustomer();
+        if (!customer) {
+            setWishlistItems([]);
+            return;
+        }
+        setIsWishlistLoading(true);
+        try {
+            // This endpoint is secured and will use the token from axiosConfig
+            const res = await api.get('/wishlist'); 
+            setWishlistItems(res.data);
+        } catch (err) {
+            console.error("Error fetching wishlist:", err);
+        } finally {
+            setIsWishlistLoading(false);
+        }
+    }, []);
 
-    const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+    const addToWishlist = async (productId) => {
+        if (!getCustomer()) throw new Error("User is not logged in.");
+        try {
+            // Backend expects 'prodcutId' (typo in backend DTO)
+            await api.post('/wishlist/add', { productId: productId });
+            await fetchWishlist(); // Refresh wishlist
+        } catch (err) {
+            console.error("Error adding to wishlist:", err);
+            throw err;
+        }
+    };
+
+    const removeFromWishlist = async (productId) => {
+        if (!getCustomer()) throw new Error("User is not logged in.");
+        try {
+            // Backend expects 'prodcutId' (typo in backend DTO)
+            await api.post('/wishlist/remove', { productId: productId });
+            await fetchWishlist(); // Refresh wishlist
+        } catch (err) {
+            console.error("Error removing from wishlist:", err);
+            throw err;
+        }
+    };
+
+    // --- CHECKOUT/ORDER FUNCTIONS ---
 
     const createPaymentOrder = async (amount) => {
         const normalizedAmount = Number(amount.toFixed(2));
@@ -160,12 +174,10 @@ export const CartProvider = ({ children }) => {
         };
 
         const response = await api.post("/orders/create", payload, {
-            headers: {
-                'Content-Type': 'application/json'
-            }
+            headers: { 'Content-Type': 'application/json' }
         });
 
-        await fetchCart();
+        await fetchCart(); // Clear cart after order
         return response.data;
     };
 
@@ -177,7 +189,37 @@ export const CartProvider = ({ children }) => {
         return response.data;
     }
 
-    const value = { cartItems, cartCount, addToCart, decrementFromCart, fetchCart, createPaymentOrder, placeOrder, fetchOrders, isLoading, error };
+    // --- EFFECT TO LOAD DATA ON LOGIN/APP LOAD ---
+    useEffect(() => {
+        fetchCart();
+        fetchWishlist();
+    }, [fetchCart, fetchWishlist]);
+
+    // --- CONTEXT VALUE ---
+    const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+    const wishlistCount = wishlistItems.length; // New count
+
+    const value = {
+        // Cart
+        cartItems,
+        cartCount,
+        addToCart,
+        decrementFromCart,
+        fetchCart,
+        isLoading,
+        error,
+        // Orders
+        createPaymentOrder,
+        placeOrder,
+        fetchOrders,
+        // NEW Wishlist
+        wishlistItems,
+        wishlistCount,
+        isWishlistLoading,
+        addToWishlist,
+        removeFromWishlist,
+        fetchWishlist
+    };
 
     return (
         <CartContext.Provider value={value}>

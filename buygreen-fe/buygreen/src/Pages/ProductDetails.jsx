@@ -22,14 +22,41 @@ const StockDisplay = ({ stock }) => {
     return <p className="text-red-600 font-semibold">Out of Stock</p>;
 };
 
+const HeartIcon = ({ inWishlist }) => (
+    <svg 
+        xmlns="http://www.w3.org/2000/svg" 
+        viewBox="0 0 24 24" 
+        fill={inWishlist ? "currentColor" : "none"} 
+        stroke="currentColor" 
+        strokeWidth="2"
+        className={`w-6 h-6 transition-colors ${
+            inWishlist 
+                ? 'text-red-500 fill-red-500' 
+                : 'text-gray-400 hover:text-red-400'
+        }`}
+    >
+        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+    </svg>
+);
+
 const ProductDetails = () => {
     const [product, setProduct] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [quantity, setQuantity] = useState(1);
+
+    const[isInWishlist, setIsInWishlist] = useState(false);
     
     const { productId } = useParams();
-    const { addToCart } = useCart();
+    const{ addToCart, addToWishlist, removeFromWishlist, wishlistItems } = useCart();
+
     const navigate = useNavigate();
+
+    useEffect(() => {
+        if(product) {
+            const inList = wishlistItems.some(item => item.productId === product.id);
+            setIsInWishlist(inList);
+        }
+    },[wishlistItems, product]);
 
     useEffect(() => {
         const fetchProduct = async () => {
@@ -70,6 +97,32 @@ const ProductDetails = () => {
             } else {
                 alert("Failed to add item. Please log in first.");
                 navigate('/login');
+            }
+        }
+    };
+
+    const handleWishlistToggle = async () => {
+        // Check if user is logged in first
+        const storedCustomer = localStorage.getItem('customer');
+        if (!storedCustomer) {
+            alert("Please log in to add items to your wishlist.");
+            navigate("/login");
+            return;
+        }
+
+        try {
+            if(isInWishlist) {
+                await removeFromWishlist(product.id);
+            } else {
+                await addToWishlist(product.id);
+            }
+        } catch(err) {
+            console.error("Wishlist error", err);
+            if (err.message && err.message.includes("User is not logged in")) {
+                alert("Please log in to manage your wishlist.");
+                navigate("/login");
+            } else {
+                alert(err.message || "Failed to update wishlist. Please try again.");
             }
         }
     };
@@ -143,14 +196,32 @@ const ProductDetails = () => {
                         </div>
                     </div>
                     
-                    {/* The "Add to Cart" button belongs INSIDE this column */}
-                    <button 
-                        onClick={handleAddToCart}
-                        className="w-full bg-green-700 text-white py-3 px-6 rounded-md hover:bg-green-800 transition-colors text-lg font-semibold disabled:bg-gray-400 disabled:cursor-not-allowed"
-                        disabled={isOutOfStock}
-                    >
-                        {isOutOfStock ? 'Out of Stock' : 'Add to Cart'}
-                    </button>
+                    {/* Action Buttons: Add to Cart and Wishlist */}
+                    <div className="flex items-center gap-3 mb-6">
+                        <button 
+                            onClick={handleAddToCart}
+                            className="flex-1 bg-green-700 text-white py-3 px-6 rounded-md hover:bg-green-800 transition-colors text-lg font-semibold disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                            disabled={isOutOfStock}
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+                                <line x1="3" y1="6" x2="21" y2="6"></line>
+                                <path d="M16 10a4 4 0 0 1-8 0"></path>
+                            </svg>
+                            {isOutOfStock ? 'Out of Stock' : 'Add to Cart'}
+                        </button>
+                        <button 
+                            onClick={handleWishlistToggle}
+                            className={`p-3 border-2 rounded-md transition-all ${
+                                isInWishlist 
+                                    ? 'border-red-300 bg-red-50 hover:bg-red-100' 
+                                    : 'border-gray-300 hover:border-gray-400 hover:bg-gray-50'
+                            }`}
+                            title={isInWishlist ? 'Remove from Wishlist' : 'Add to Wishlist'}
+                        >
+                            <HeartIcon inWishlist={isInWishlist} />
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
