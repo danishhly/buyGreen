@@ -17,4 +17,7 @@ public interface CustomerService {
     boolean resetPassword(String token, String newPassword);
     Page<Customers> getAllCustomers(Pageable pageable);
     Customers updateProfile(String email, Customers updatedCustomer);
+    Customers getCustomerById(Long id);
+    void deleteCustomer(Long id);
+    boolean changeEmail(String currentEmail, String newEmail, String password);
 }

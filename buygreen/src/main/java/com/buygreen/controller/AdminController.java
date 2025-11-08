@@ -9,11 +9,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
+import java.security.Principal;
 
 @RestController
 @RequestMapping("/admin")
@@ -34,5 +34,30 @@ public class AdminController {
         Page<Customers> customers = customerService.getAllCustomers(pageable);
         customers.forEach(customer -> customer.setPassword(null));
         return ResponseEntity.ok(customers);
+    }
+
+    @DeleteMapping("/customers/{id}")
+    public ResponseEntity<?> deleteCustomer(@PathVariable Long id, Principal principal) {
+        try {
+            Customers customer = customerService.getCustomerById(id);
+            if (customer == null) {
+                return ResponseEntity.badRequest().body(Map.of("message", "Customer not found"));
+            }
+            
+            // Prevent deleting yourself
+            Customers currentAdmin = customerService.getCustomerByEmail(principal.getName());
+            if (currentAdmin != null && currentAdmin.getId() == id) {
+                return ResponseEntity.badRequest().body(Map.of("message", "You cannot delete your own account"));
+            }
+            
+            customerService.deleteCustomer(id);
+            String role = customer.getRole();
+            String message = "admin".equalsIgnoreCase(role) 
+                ? "Admin user deleted successfully" 
+                : "Customer deleted successfully";
+            return ResponseEntity.ok(Map.of("message", message));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Failed to delete customer: " + e.getMessage()));
+        }
     }
 }

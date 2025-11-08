@@ -139,6 +139,57 @@ public class CustomerController {
         }
     }
 
+    @PostMapping("/customers/change-email")
+    public ResponseEntity<?> changeEmail(@RequestBody Map<String, String> request, Principal principal) {
+        String userEmail = principal.getName();
+        String newEmail = request.get("newEmail");
+        String password = request.get("password");
+
+        if (newEmail == null || newEmail.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("message", "New email is required"));
+        }
+
+        if (password == null || password.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Password is required"));
+        }
+
+        // Validate email format
+        if (!newEmail.matches("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$")) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Invalid email format"));
+        }
+
+        // Check if new email is same as current
+        if (userEmail.equalsIgnoreCase(newEmail)) {
+            return ResponseEntity.badRequest().body(Map.of("message", "New email must be different from current email"));
+        }
+
+        boolean isChanged = service.changeEmail(userEmail, newEmail, password);
+        
+        if (isChanged) {
+            // Generate new token with updated email
+            Customers updatedCustomer = service.getCustomerByEmail(newEmail);
+            final String token = jwtUtil.generateToken(updatedCustomer);
+            
+            return ResponseEntity.ok(Map.of(
+                "message", "Email changed successfully. Please login again with your new email.",
+                "token", token,
+                "customer", Map.of(
+                    "id", updatedCustomer.getId(),
+                    "name", updatedCustomer.getName(),
+                    "email", updatedCustomer.getEmail(),
+                    "role", updatedCustomer.getRole()
+                )
+            ));
+        } else {
+            Customers existingCustomer = service.getCustomerByEmail(newEmail);
+            if (existingCustomer != null) {
+                return ResponseEntity.badRequest().body(Map.of("message", "Email already exists"));
+            } else {
+                return ResponseEntity.badRequest().body(Map.of("message", "Invalid password"));
+            }
+        }
+    }
+
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginData loginData) {
         Customers existingCustomer = service.getCustomerByEmail(loginData.getEmail());

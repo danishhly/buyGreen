@@ -148,4 +148,37 @@ public class CustomerServiceImplementation implements CustomerService, UserDetai
         return repo.save(customer);
     }
 
+    @Override
+    public Customers getCustomerById(Long id) {
+        return repo.findById(id).orElse(null);
+    }
+
+    @Override
+    public void deleteCustomer(Long id) {
+        repo.deleteById(id);
+    }
+
+    @Override
+    public boolean changeEmail(String currentEmail, String newEmail, String password) {
+        Customers customer = repo.findByEmail(currentEmail);
+        if (customer == null) {
+            return false;
+        }
+
+        // Verify password
+        if (!passwordEncoder.matches(password, customer.getPassword())) {
+            return false;
+        }
+
+        // Check if new email already exists
+        if (repo.findByEmail(newEmail) != null) {
+            return false;
+        }
+
+        // Update email
+        customer.setEmail(newEmail);
+        repo.save(customer);
+        return true;
+    }
+
 }
