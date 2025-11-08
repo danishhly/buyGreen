@@ -156,7 +156,7 @@ export const CartProvider = ({ children }) => {
         const response = await api.post("/payments/order", {
             amount: normalizedAmount,
             currency: "INR",
-            receipt: `buygreen_${Date.now()}`
+            receipt: `buygron_${Date.now()}`
         });
         return response.data;
     };

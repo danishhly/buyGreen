@@ -89,7 +89,7 @@ const Navbar = () => {
                                 to="/CustomerHome" 
                                 className="flex items-center gap-2 hover:opacity-80 transition-all duration-300"
                             >
-                                <Logo className="h-12 w-auto" />
+                                <Logo className="h-10 w-auto" />
                             </Link>
                         </div>
 

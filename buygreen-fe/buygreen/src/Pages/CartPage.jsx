@@ -62,7 +62,7 @@ const CartPage = () => {
                 key: razorpayKey,
                 amount: paymentOrder.amount,
                 currency: paymentOrder.currency,
-                name: 'BuyGreen',
+                name: 'buygron.',
                 description: 'Order Payment',
                 order_id: paymentOrder.id,
                 handler: async () => {

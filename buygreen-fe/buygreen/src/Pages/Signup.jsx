@@ -4,6 +4,7 @@ import { GoogleLogin } from '@react-oauth/google';
 import { useNavigate, Link } from 'react-router-dom';
 import Logo from '../Component/Logo';
 
+
 function Signup() {
     const [formData, setFormData] = useState({
         name: "",

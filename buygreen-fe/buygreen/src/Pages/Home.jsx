@@ -9,7 +9,7 @@ function Home() {
         <div className="flex justify-center mb-6">
           <Logo className="h-16 w-auto" />
         </div>
-        <h1 className="text-3xl font-bold text-green-700 mb-6">Welcome to buyGreen</h1>
+        <h1 className="text-3xl font-bold text-green-700 mb-6">Welcome to buygron.</h1>
 
         <div className="space-y-4">
           <NavLink
