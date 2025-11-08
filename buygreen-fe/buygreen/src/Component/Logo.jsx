@@ -2,30 +2,49 @@ import React from 'react';
 
 /**
  * Logo Component
- * Reusable logo component that displays the buygreen. logo
+ * Reusable logo component that displays "buygreen." as text
  * @param {string} className - Additional CSS classes to apply
- * @param {string} alt - Alt text for the logo (defaults to "buygreen. Logo")
- * @param {object} style - Additional inline styles
  */
 const Logo = ({ 
-    className = "", 
-    alt = "buygreen. Logo",
-    style = {}
+    className = "" 
 }) => {
-    const defaultStyle = {
-        imageRendering: '-webkit-optimize-contrast',
-        ...style
-    };
-
     return (
-        <img 
-            src="/buygreen.svg" 
-            alt={alt}
-            className={className}
-            style={defaultStyle}
-        />
+        <span 
+            className={`font-bold tracking-tight ${className}`}
+            style={{
+                fontFamily: "'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif",
+                letterSpacing: '-0.025em',
+                fontWeight: 700,
+                lineHeight: '1.2'
+            }}
+        >
+            <span 
+                className="text-gray-900"
+                style={{
+                    fontWeight: 700
+                }}
+            >
+                buy
+            </span>
+            <span 
+                className="text-green-600"
+                style={{
+                    fontWeight: 700
+                }}
+            >
+                <span
+                    style={{
+                        fontFamily: "'Playfair Display', 'Georgia', 'Times New Roman', serif",
+                        fontStyle: 'italic',
+                        fontWeight: 700
+                    }}
+                >
+                    g
+                </span>
+                reen.
+            </span>
+        </span>
     );
 };
 
 export default Logo;
-

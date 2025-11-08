@@ -119,7 +119,7 @@ function Signup() {
                     {/* Logo */}
                     <div className="mb-12">
                         <Link to="/" className="flex items-center mb-8">
-                            <Logo className="h-10 w-auto" />
+                            <Logo className="text-4xl" />
                         </Link>
                         
                         <h2 className="text-4xl font-serif font-bold text-gray-900 mb-3">Create Account</h2>

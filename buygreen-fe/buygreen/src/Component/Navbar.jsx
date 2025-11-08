@@ -73,6 +73,56 @@ const Navbar = () => {
             navigate('/CustomerHome');
         }
         setMobileMenuOpen(false);
+        // Scroll to top when navigating
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    const handleAboutClick = () => {
+        if (location.pathname === '/CustomerHome') {
+            // If already on CustomerHome, scroll to about section
+            setTimeout(() => {
+                const aboutSection = document.getElementById('about');
+                if (aboutSection) {
+                    aboutSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            }, 100);
+        } else {
+            navigate('/CustomerHome');
+            setTimeout(() => {
+                const aboutSection = document.getElementById('about');
+                if (aboutSection) {
+                    aboutSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            }, 500);
+        }
+        setMobileMenuOpen(false);
+    };
+
+    const handleContactClick = () => {
+        if (location.pathname === '/CustomerHome') {
+            // If already on CustomerHome, scroll to contact section
+            setTimeout(() => {
+                const contactSection = document.getElementById('contact');
+                if (contactSection) {
+                    contactSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            }, 100);
+        } else {
+            navigate('/CustomerHome');
+            setTimeout(() => {
+                const contactSection = document.getElementById('contact');
+                if (contactSection) {
+                    contactSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            }, 500);
+        }
+        setMobileMenuOpen(false);
+    };
+
+    const handleHomeClick = () => {
+        navigate('/CustomerHome');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        setMobileMenuOpen(false);
     };
 
     return (
@@ -87,9 +137,9 @@ const Navbar = () => {
                         <div className="flex-shrink-0 group">
                             <Link 
                                 to="/CustomerHome" 
-                                className="flex items-center gap-2 hover:opacity-80 transition-all duration-300"
+                                className="flex items-center hover:opacity-80 transition-all duration-300"
                             >
-                                <Logo className="h-10 w-auto" />
+                                <Logo className="text-3xl" />
                             </Link>
                         </div>
 
@@ -206,6 +256,17 @@ const Navbar = () => {
 
                     <div className="hidden lg:flex items-center justify-center border-t border-gray-100">
                         <ul className="flex items-center gap-8 py-4">
+                            <li>
+                                <button
+                                    onClick={handleHomeClick}
+                                    className="relative text-sm font-semibold text-gray-700 hover:text-green-600 
+                                             transition-colors group"
+                                >
+                                    Home
+                                    <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-green-600 
+                                                   group-hover:w-full transition-all duration-300"></span>
+                                </button>
+                            </li>
                             {navCategories.map((category) => (
                                 <li key={category.name}>
                                     <button
@@ -219,6 +280,28 @@ const Navbar = () => {
                                     </button>
                                 </li>
                             ))}
+                            <li>
+                                <button
+                                    onClick={handleAboutClick}
+                                    className="relative text-sm font-semibold text-gray-700 hover:text-green-600 
+                                             transition-colors group"
+                                >
+                                    About
+                                    <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-green-600 
+                                                   group-hover:w-full transition-all duration-300"></span>
+                                </button>
+                            </li>
+                            <li>
+                                <button
+                                    onClick={handleContactClick}
+                                    className="relative text-sm font-semibold text-gray-700 hover:text-green-600 
+                                             transition-colors group"
+                                >
+                                    Contact
+                                    <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-green-600 
+                                                   group-hover:w-full transition-all duration-300"></span>
+                                </button>
+                            </li>
                         </ul>
                     </div>
                 </div>
@@ -244,6 +327,13 @@ const Navbar = () => {
                                     </svg>
                                 </button>
                             </form>
+                            <button
+                                onClick={handleHomeClick}
+                                className="w-full text-left px-4 py-3 text-sm font-medium text-gray-700 
+                                         hover:bg-green-50 hover:text-green-600 rounded-lg transition-colors"
+                            >
+                                Home
+                            </button>
                             {navCategories.map((category) => (
                                 <button
                                     key={category.name}
@@ -254,6 +344,20 @@ const Navbar = () => {
                                     {category.name}
                                 </button>
                             ))}
+                            <button
+                                onClick={handleAboutClick}
+                                className="w-full text-left px-4 py-3 text-sm font-medium text-gray-700 
+                                         hover:bg-green-50 hover:text-green-600 rounded-lg transition-colors"
+                            >
+                                About
+                            </button>
+                            <button
+                                onClick={handleContactClick}
+                                className="w-full text-left px-4 py-3 text-sm font-medium text-gray-700 
+                                         hover:bg-green-50 hover:text-green-600 rounded-lg transition-colors"
+                            >
+                                Contact
+                            </button>
                         </div>
                     </div>
                 )}

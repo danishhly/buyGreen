@@ -10,12 +10,32 @@ const ProfilePage = () => {
     });
     const [message, setMessage] = useState('');
     const [isError, setIsError] = useState(false);
+    
+    // Account Information state
+    const [isEditing, setIsEditing] = useState(false);
+    const [accountData, setAccountData] = useState({
+        name: '',
+        email: '',
+        phone: '',
+        address: ''
+    });
+    const [accountMessage, setAccountMessage] = useState('');
+    const [accountIsError, setAccountIsError] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
 
     // 1. Load customer data from localStorage on component mount
     useEffect(() => {
         const storedCustomer = localStorage.getItem('customer');
         if (storedCustomer) {
-            setCustomer(JSON.parse(storedCustomer));
+            const customerData = JSON.parse(storedCustomer);
+            setCustomer(customerData);
+            // Initialize account data with customer info and defaults
+            setAccountData({
+                name: customerData.name || '',
+                email: customerData.email || '',
+                phone: customerData.phone || '',
+                address: customerData.address || ''
+            });
         }
     }, []);
 
@@ -25,6 +45,96 @@ const ProfilePage = () => {
             ...formData,
             [e.target.name]: e.target.value,
         });
+    };
+
+    // Handler for account information fields
+    const handleAccountChange = (e) => {
+        const { name, value } = e.target;
+        setAccountData(prev => ({
+            ...prev,
+            [name]: value
+        }));
+        // Clear message when user starts typing
+        if (accountMessage) {
+            setAccountMessage('');
+        }
+    };
+
+    // Handler to save account information
+    const handleSaveAccountInfo = async (e) => {
+        e.preventDefault();
+        setIsSaving(true);
+        setAccountMessage('');
+        setAccountIsError(false);
+
+        try {
+            // Validate required fields
+            if (!accountData.name.trim() || !accountData.email.trim()) {
+                setAccountMessage('Name and Email are required fields.');
+                setAccountIsError(true);
+                setIsSaving(false);
+                return;
+            }
+
+            // Validate email format
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(accountData.email)) {
+                setAccountMessage('Please enter a valid email address.');
+                setAccountIsError(true);
+                setIsSaving(false);
+                return;
+            }
+
+            // Call the backend API endpoint
+            const response = await api.put('/customers/update-profile', {
+                name: accountData.name,
+                phone: accountData.phone,
+                address: accountData.address
+                // Note: Email is not updated through this endpoint for security
+            });
+            
+            // Update customer in localStorage with response data
+            const updatedCustomerData = response.data.customer;
+            const updatedCustomer = {
+                ...customer,
+                name: updatedCustomerData.name,
+                phone: updatedCustomerData.phone || '',
+                address: updatedCustomerData.address || ''
+            };
+            localStorage.setItem('customer', JSON.stringify(updatedCustomer));
+            setCustomer(updatedCustomer);
+
+            // Show success message
+            setAccountMessage('Account information updated successfully!');
+            setAccountIsError(false);
+            setIsEditing(false);
+
+            // Clear success message after 3 seconds
+            setTimeout(() => {
+                setAccountMessage('');
+            }, 3000);
+
+        } catch (error) {
+            console.error('Error updating account information:', error);
+            setAccountMessage(error.response?.data?.message || 'Failed to update account information. Please try again.');
+            setAccountIsError(true);
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    // Handler to cancel editing
+    const handleCancelEdit = () => {
+        // Reset to original customer data
+        setAccountData({
+            name: customer.name || '',
+            email: customer.email || '',
+            phone: customer.phone || '',
+            address: customer.address || ''
+        });
+        setIsEditing(false);
+        setAccountMessage('');
+        setAccountIsError(false);
     };
 
     // 3. Handler to submit the new password
@@ -79,33 +189,186 @@ const ProfilePage = () => {
 
                     {/* Column 1: Details & Orders */}
                     <div className="space-y-6">
-                        {/* Account Details Card */}
+                        {/* Account Information Card */}
                         <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
-                            <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-700">
-                                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
-                                    <circle cx="9" cy="7" r="4"></circle>
-                                    <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
-                                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-                                </svg>
-                                Account Details
-                            </h2>
-                            <div className="space-y-4">
-                                <div className="pb-4 border-b border-gray-100">
-                                    <p className="text-sm text-gray-500 uppercase tracking-wide mb-1">Name</p>
-                                    <p className="text-lg font-semibold text-gray-900">{customer.name}</p>
+                            <h2 className="text-2xl font-bold text-gray-900 mb-6">Account Information</h2>
+                            
+                            {/* Success/Error Message */}
+                            {accountMessage && (
+                                <div className={`mb-6 p-4 rounded-lg ${
+                                    accountIsError 
+                                        ? 'bg-red-50 border border-red-200' 
+                                        : 'bg-green-50 border border-green-200'
+                                }`}>
+                                    <p className={`text-sm font-semibold ${
+                                        accountIsError ? 'text-red-800' : 'text-green-800'
+                                    }`}>
+                                        {accountMessage}
+                                    </p>
                                 </div>
-                                <div className="pb-4 border-b border-gray-100">
-                                    <p className="text-sm text-gray-500 uppercase tracking-wide mb-1">Email</p>
-                                    <p className="text-lg font-semibold text-gray-900">{customer.email}</p>
-                                </div>
+                            )}
+
+                            <form onSubmit={handleSaveAccountInfo} className="space-y-5">
+                                {/* Full Name */}
                                 <div>
-                                    <p className="text-sm text-gray-500 uppercase tracking-wide mb-1">Role</p>
-                                    <span className="inline-block px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-semibold capitalize">
-                                        {customer.role}
-                                    </span>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Full Name
+                                    </label>
+                                    <div className="relative">
+                                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                            </svg>
+                                        </div>
+                                        <input
+                                            type="text"
+                                            name="name"
+                                            value={accountData.name}
+                                            onChange={handleAccountChange}
+                                            readOnly={!isEditing}
+                                            onFocus={(e) => {
+                                                if (!isEditing) {
+                                                    e.target.blur();
+                                                }
+                                            }}
+                                            required
+                                            className={`w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 ${
+                                                isEditing 
+                                                    ? 'bg-white text-gray-900 cursor-text' 
+                                                    : 'bg-gray-50 text-gray-700 cursor-not-allowed'
+                                            }`}
+                                            placeholder="Your full name"
+                                        />
+                                    </div>
                                 </div>
-                            </div>
+
+                                {/* Email */}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Email
+                                    </label>
+                                    <div className="relative">
+                                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                            </svg>
+                                        </div>
+                                        <input
+                                            type="email"
+                                            name="email"
+                                            value={accountData.email}
+                                            readOnly
+                                            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 cursor-not-allowed"
+                                            placeholder="your.email@example.com"
+                                            title="Email cannot be changed"
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Phone */}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Phone
+                                    </label>
+                                    <div className="relative">
+                                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                                            </svg>
+                                        </div>
+                                        <input
+                                            type="tel"
+                                            name="phone"
+                                            value={accountData.phone}
+                                            onChange={handleAccountChange}
+                                            readOnly={!isEditing}
+                                            onFocus={(e) => {
+                                                if (!isEditing) {
+                                                    e.target.blur();
+                                                }
+                                            }}
+                                            className={`w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 ${
+                                                isEditing 
+                                                    ? 'bg-white text-gray-900 cursor-text' 
+                                                    : 'bg-gray-50 text-gray-700 cursor-not-allowed'
+                                            }`}
+                                            placeholder="+1 (555) 123-4567"
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Address */}
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Address
+                                    </label>
+                                    <div className="relative">
+                                        <div className="absolute inset-y-0 left-0 pl-3 pt-3 flex items-start pointer-events-none">
+                                            <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                            </svg>
+                                        </div>
+                                        <input
+                                            type="text"
+                                            name="address"
+                                            value={accountData.address}
+                                            onChange={handleAccountChange}
+                                            readOnly={!isEditing}
+                                            onFocus={(e) => {
+                                                if (!isEditing) {
+                                                    e.target.blur();
+                                                }
+                                            }}
+                                            className={`w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 ${
+                                                isEditing 
+                                                    ? 'bg-white text-gray-900 cursor-text' 
+                                                    : 'bg-gray-50 text-gray-700 cursor-not-allowed'
+                                            }`}
+                                            placeholder="123 Green Street, Eco City, EC 12345"
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Action Buttons */}
+                                {!isEditing ? (
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsEditing(true)}
+                                        className="w-full bg-green-600 text-white py-3 px-6 rounded-lg hover:bg-green-700 transition-colors font-semibold"
+                                    >
+                                        Edit Information
+                                    </button>
+                                ) : (
+                                    <div className="flex gap-3">
+                                        <button
+                                            type="submit"
+                                            disabled={isSaving}
+                                            className="flex-1 bg-green-600 text-white py-3 px-6 rounded-lg hover:bg-green-700 transition-colors font-semibold disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                        >
+                                            {isSaving ? (
+                                                <>
+                                                    <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                    </svg>
+                                                    Saving...
+                                                </>
+                                            ) : (
+                                                'Save Changes'
+                                            )}
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={handleCancelEdit}
+                                            disabled={isSaving}
+                                            className="flex-1 bg-gray-200 text-gray-700 py-3 px-6 rounded-lg hover:bg-gray-300 transition-colors font-semibold disabled:bg-gray-100 disabled:cursor-not-allowed"
+                                        >
+                                            Cancel
+                                        </button>
+                                    </div>
+                                )}
+                            </form>
                         </div>
 
                         {/* My Orders Card */}

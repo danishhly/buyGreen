@@ -1,4 +1,4 @@
-import { Routes, Route, Outlet } from "react-router-dom"
+import { Routes, Route, Outlet, Navigate } from "react-router-dom"
 import Home from "./Pages/Home.jsx"
 import Signup from "./Pages/Signup.jsx"
 import Login from "./Pages/Login.jsx"
@@ -10,6 +10,7 @@ import Orders from './Pages/Orders.jsx';
 import Profile from './Pages/Profile.jsx';
 import { CartProvider } from './Context/CartProvider.jsx'
 import Navbar from './Component/Navbar.jsx';
+import Footer from './Component/Footer.jsx';
 import React from 'react';
 import ProductDetails from './Pages/ProductDetails.jsx';
 import ForgotPassword from "./Pages/ForgotPassword.jsx"; 
@@ -18,13 +19,23 @@ import AdminRoute from "./Component/AdminRoute.jsx";
 import CustomerRoute from "./Component/CustomerRoute.jsx";
 import WishlistPage from "./Pages/WishlistPage.jsx";
 const AppLayout = () => (
-  <>
+  <div className="flex flex-col min-h-screen">
     <Navbar />
-    <Outlet />
-  </>
+    <div className="flex-grow">
+      <Outlet />
+    </div>
+    <Footer />
+  </div>
 );
 
-const PublicLayout = () => <Outlet />;
+const PublicLayout = () => (
+  <div className="flex flex-col min-h-screen">
+    <div className="flex-grow">
+      <Outlet />
+    </div>
+    <Footer />
+  </div>
+);
 
 function App() {
   return (
@@ -33,7 +44,8 @@ function App() {
         {/* === PUBLIC ROUTES === */}
         {/* These pages don't have a navbar */}
         <Route element={<PublicLayout />}>
-          <Route path="/" element={<Home />} />
+          <Route path="/" element={<Navigate to="/signup" replace />} />
+          <Route path="/home" element={<Home />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/login" element={<Login />} />
           <Route path="/forgot-password" element={<ForgotPassword />} /> {/* 3. ADD ROUTE */}
