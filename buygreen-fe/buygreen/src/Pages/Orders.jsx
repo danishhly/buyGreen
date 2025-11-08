@@ -60,7 +60,7 @@ const Orders = () => {
                                     </p>
                                 </div>
                                 <div className="text-lg font-semibold text-green-700">
-                                    ${Number(order.totalAmount).toFixed(2)}
+                                    ₹{Number(order.totalAmount).toFixed(2)}
                                 </div>
                             </div>
 
@@ -70,7 +70,7 @@ const Orders = () => {
                                         <span>
                                             {item.productName} × {item.quantity}
                                         </span>
-                                        <span>${Number(item.price).toFixed(2)}</span>
+                                        <span>₹{Number(item.price).toFixed(2)}</span>
                                     </div>
                                 ))}
                             </div>

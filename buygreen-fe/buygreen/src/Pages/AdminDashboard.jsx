@@ -412,7 +412,7 @@ const ProductManager = () => {
 
                                 <div className="flex items-center justify-between mb-4">
                                     <span className="text-2xl font-bold text-green-700">
-                                        ${typeof product.price === 'number' ? product.price.toFixed(2) : parseFloat(product.price).toFixed(2)}
+                                        ₹{typeof product.price === 'number' ? product.price.toFixed(2) : parseFloat(product.price).toFixed(2)}
                                     </span>
                                     <span className="text-sm text-gray-500">
                                         Stock: <span className="font-semibold">{product.stockQuantity || 0}</span>
@@ -519,14 +519,14 @@ const OrderList = () => {
                                     <p className="text-sm text-gray-600">Customer ID: {order.customerId}</p>
                                     <p className="text-sm text-gray-600">Date: {new Date(order.orderDate).toLocaleString()}</p>
                                 </div>
-                                <span className="text-lg text-gray-900 font-semibold">${order.totalAmount.toFixed(2)}</span>
+                                <span className="text-lg text-gray-900 font-semibold">₹{order.totalAmount.toFixed(2)}</span>
                             </div>
                             <div className="mt-2 border-t pt-2">
                                 <h4 className="font-semibold text-sm">Items:</h4>
                                 <ul className="list-disc pl-5">
                                     {order.items.map(item => (
                                         <li key={item.id} className="text-sm text-gray-700">
-                                            {item.productName} (x{item.quantity}) - ${item.price.toFixed(2)}
+                                            {item.productName} (x{item.quantity}) - ₹{item.price.toFixed(2)}
                                         </li>
                                     ))}
                                 </ul>

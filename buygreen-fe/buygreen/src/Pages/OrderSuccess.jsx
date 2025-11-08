@@ -56,10 +56,10 @@ const OrderSuccess = () => {
                                 </div>
                                 <div className="text-right ml-4">
                                     <p className="text-lg font-bold text-gray-900">
-                                        ${(item.price * item.quantity).toFixed(2)}
+                                        ₹{(item.price * item.quantity).toFixed(2)}
                                     </p>
                                     {item.quantity > 1 && (
-                                        <p className="text-xs text-gray-500">${item.price.toFixed(2)} each</p>
+                                        <p className="text-xs text-gray-500">₹{item.price.toFixed(2)} each</p>
                                     )}
                                 </div>
                             </div>
@@ -70,7 +70,7 @@ const OrderSuccess = () => {
                         <div className="flex justify-between items-center">
                             <span className="text-xl font-semibold text-gray-700">Total</span>
                             <span className="text-3xl font-bold text-green-700">
-                                ${typeof order.totalAmount === 'number' ? order.totalAmount.toFixed(2) : parseFloat(order.totalAmount).toFixed(2)}
+                                ₹{typeof order.totalAmount === 'number' ? order.totalAmount.toFixed(2) : parseFloat(order.totalAmount).toFixed(2)}
                             </span>
                         </div>
                     </div>

@@ -218,7 +218,7 @@ const CustomerHome = () => {
 
                                     <div className="flex items-center justify-between gap-3">
                                         <span className="text-2xl font-bold text-green-600">
-                                            ${product.price.toFixed(2)}
+                                            ₹{product.price.toFixed(2)}
                                         </span>
                                         <button
                                             onClick={(e) => handleAddToCart(product, e)}

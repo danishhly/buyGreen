@@ -142,10 +142,10 @@ const Navbar = () => {
                                     <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
                                 </svg>
                                 {wishlistCount > 0 && (
-                                    <span className="absolute -top-1 -right-1 gradient-green text-white text-xs font-bold 
+                                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold 
                                                    rounded-full h-5 w-5 flex items-center justify-center shadow-lg 
-                                                   animate-bounce-subtle">
-                                        {wishlistCount}
+                                                   border-2 border-white min-w-[20px]">
+                                        {wishlistCount > 99 ? '99+' : wishlistCount}
                                     </span>
                                 )}
                             </Link>
@@ -163,10 +163,10 @@ const Navbar = () => {
                                     <path d="M16 10a4 4 0 0 1-8 0"></path>
                                 </svg>
                                 {cartCount > 0 && (
-                                    <span className="absolute -top-1 -right-1 gradient-green text-white text-xs font-bold 
+                                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold 
                                                    rounded-full h-5 w-5 flex items-center justify-center shadow-lg 
-                                                   animate-bounce-subtle">
-                                        {cartCount}
+                                                   border-2 border-white min-w-[20px] z-10">
+                                        {cartCount > 99 ? '99+' : cartCount}
                                     </span>
                                 )}
                             </Link>
