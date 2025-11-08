@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useCart } from '../Hooks/UseCart';
 import { Link, useNavigate } from 'react-router-dom';
+import { useToast } from '../Component/Toast';
 
 const CartPage = () => {
+    const { success, error, warning } = useToast();
     const { cartItems, addToCart, decrementFromCart, createPaymentOrder, placeOrder, isLoading } = useCart();
     const navigate = useNavigate();
     const [isProcessingPayment, setIsProcessingPayment] = useState(false);
@@ -12,7 +14,7 @@ const CartPage = () => {
             await decrementFromCart(item.productId);
         } catch (err) {
             console.error('Failed to decrease quantity', err);
-            alert('Could not decrease item quantity. Please try again.');
+            error('Could not decrease item quantity. Please try again.');
         }
     };
 
@@ -25,7 +27,7 @@ const CartPage = () => {
             });
         } catch (err) {
             console.error('Failed to increase quantity', err);
-            alert(err?.message || 'Could not increase item quantity. Please try again.');
+            error(err?.message || 'Could not increase item quantity. Please try again.');
         }
     };
 
@@ -40,7 +42,7 @@ const CartPage = () => {
 
     const handleCheckout = async () => {
         if (cartItems.length === 0) {
-            alert('Add items to cart before checking out.');
+            warning('Add items to cart before checking out.');
             return;
         }
 
@@ -71,7 +73,7 @@ const CartPage = () => {
                         navigate('/order-success', { state: { order } });
                     } catch (err) {
                         console.error('Failed to create order after payment', err);
-                        alert('Something went wrong finalizing your order.');
+                        error('Something went wrong finalizing your order.');
                     }
                 },
                 theme: {
@@ -82,13 +84,13 @@ const CartPage = () => {
             const razorpayInstance = new window.Razorpay(options);
             razorpayInstance.on('payment.failed', (response) => {
                 console.error('Payment failed', response);
-                alert('Payment failed. Please try again.');
+                error('Payment failed. Please try again.');
             });
 
             razorpayInstance.open();
         } catch (err) {
             console.error('Checkout failed', err);
-            alert('Checkout failed. Please try again.');
+            error('Checkout failed. Please try again.');
         } finally {
             setIsProcessingPayment(false);
         }

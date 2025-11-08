@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import Logo from './Logo';
+import { useToast } from './Toast';
 
 const Footer = () => {
+    const { success } = useToast();
     const [email, setEmail] = useState('');
 
     const handleSubscribe = (e) => {
         e.preventDefault();
         if (email.trim()) {
-            alert(`Thank you for subscribing with ${email}!`);
+            success(`Thank you for subscribing with ${email}!`);
             setEmail('');
         }
     };

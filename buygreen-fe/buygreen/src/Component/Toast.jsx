@@ -144,29 +144,19 @@ const Toast = ({ toast, onClose }) => {
                 </button>
             </div>
             {/* Progress bar */}
-            <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/10">
+            <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/10 overflow-hidden rounded-b-lg">
                 <div 
-                    className={`h-full ${
+                    className={`h-full toast-progress ${
                         toast.type === 'success' ? 'bg-green-600' :
                         toast.type === 'error' ? 'bg-red-600' :
                         toast.type === 'warning' ? 'bg-yellow-600' :
                         'bg-blue-600'
                     }`}
                     style={{
-                        animation: `shrink ${toast.duration}ms linear forwards`
+                        animation: `toast-shrink ${toast.duration}ms linear forwards`
                     }}
                 />
             </div>
-            <style jsx>{`
-                @keyframes shrink {
-                    from {
-                        width: 100%;
-                    }
-                    to {
-                        width: 0%;
-                    }
-                }
-            `}</style>
         </div>
     );
 };

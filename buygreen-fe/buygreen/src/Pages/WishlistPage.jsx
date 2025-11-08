@@ -1,6 +1,7 @@
 import React from 'react';
 import { useCart } from '../Hooks/UseCart'; // We'll add wishlist functions to this hook
 import { Link } from 'react-router-dom';
+import { useToast } from '../Component/Toast';
 
 // A simple X icon for removing items
 const RemoveIcon = () => (
@@ -11,14 +12,16 @@ const RemoveIcon = () => (
 
 const WishlistPage = () => {
     // We will add these to useCart in the next step
+    const { success, error } = useToast();
     const { wishlistItems, removeFromWishlist, isWishlistLoading } = useCart();
 
     const handleRemove = async (productId) => {
         try {
             await removeFromWishlist(productId);
+            success("Item removed from wishlist");
         } catch (err) {
             console.error("Failed to remove from wishlist", err);
-            alert("Could not remove item. Please try again.");
+            error("Could not remove item. Please try again.");
         }
     };
 

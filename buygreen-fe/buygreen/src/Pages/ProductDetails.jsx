@@ -5,6 +5,7 @@ import { useCart } from '../Hooks/UseCart';
 import ImageSlider from '../Component/ImageSlider'
 import ReviewList from '../Component/ReviewList.jsx';
 import ReviewForm from '../Component/ReviewForm.jsx';
+import { useToast } from '../Component/Toast';
 
 const LoadingSpinner = () => (
     <div className="flex justify-center items-center min-h-screen">
@@ -65,6 +66,7 @@ const HeartIcon = ({ inWishlist }) => (
 );
 
 const ProductDetails = () => {
+    const { success, error, warning } = useToast();
     const [product, setProduct] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [fetchError, setFetchError] = useState(null);
@@ -120,19 +122,24 @@ const ProductDetails = () => {
 
     const handleAddToCart = async () => {
         if (!product) {
-            alert("Product information is not available. Please try refreshing the page.");
+            error("Product information is not available. Please try refreshing the page.");
             return;
         }
 
         try {
             await addToCart(product, quantity);
-            alert(`${quantity} x ${product.name} added to cart! ✅`);
+            success(`${quantity} x ${product.name} added to cart!`);
         } catch (err) {
             console.error("Error adding to cart:", err);
             if (err.message && (err.message.includes("Not enough stock") || err.message.includes("User is not logged in"))) {
-                alert(err.message);
+                if (err.message.includes("Not enough stock")) {
+                    warning(err.message);
+                } else {
+                    error(err.message);
+                    navigate('/login');
+                }
             } else {
-                alert("Please log in to add items to your cart.");
+                error("Please log in to add items to your cart.");
                 navigate('/login');
             }
         }
@@ -142,13 +149,13 @@ const ProductDetails = () => {
 
     const handleWishlistToggle = async () => {
         if (!product) {
-            alert("Product information is not available. Please try refreshing the page.");
+            error("Product information is not available. Please try refreshing the page.");
             return;
         }
 
         const storedCustomer = localStorage.getItem('customer');
         if (!storedCustomer) {
-            alert("Please log in to add items to your wishlist.");
+            warning("Please log in to add items to your wishlist.");
             navigate("/login");
             return;
         }
@@ -156,16 +163,18 @@ const ProductDetails = () => {
         try {
             if (isInWishlist) {
                 await removeFromWishlist(product.id);
+                success("Removed from wishlist");
             } else {
                 await addToWishlist(product.id);
+                success("Added to wishlist");
             }
         } catch (err) {
             console.error("Wishlist error:", err);
             if (err.message && err.message.includes("User is not logged in")) {
-                alert("Please log in to manage your wishlist.");
+                warning("Please log in to manage your wishlist.");
                 navigate("/login");
             } else {
-                alert(err.message || "Failed to update wishlist. Please try again.");
+                error(err.message || "Failed to update wishlist. Please try again.");
             }
         }
     };

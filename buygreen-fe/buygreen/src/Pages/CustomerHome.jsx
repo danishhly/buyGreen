@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import api from '../api/axiosConfig';
 import { useCart } from '../Hooks/UseCart';
+import { useToast } from '../Component/Toast';
 
 const LoadingSpinner = () => (
     <div className="flex justify-center items-center h-64">
@@ -40,6 +41,7 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
 }
 
 const CustomerHome = () => {
+    const { success, error, warning } = useToast();
     const [allProducts, setAllProducts] = useState([]);
     const [filteredProducts, setFilteredProducts] = useState([]);
     const [isLoadingProducts, setIsLoadingProducts] = useState(true);
@@ -65,7 +67,7 @@ const CustomerHome = () => {
     const [currentPage, setCurrentPage] = useState(0);
     const [totalPages, setTotalPages] = useState(0);
     const [totalProducts, setTotalProducts] = useState(0);
-    const PRODUCTS_PER_PAGE = 10;
+    const PRODUCTS_PER_PAGE = 12;
 
     useEffect(() => {
         const params = new URLSearchParams(location.search);
@@ -78,12 +80,29 @@ const CustomerHome = () => {
 
     useEffect(() => {
         setIsLoadingProducts(true);
-        api.get(`/products/all?page=${currentPage}&size=${PRODUCTS_PER_PAGE}`)
+        // Use search endpoint if there's a search term, otherwise use regular endpoint
+        let apiCall;
+        if (searchTerm && searchTerm.trim() !== "") {
+            apiCall = api.get(`/products/search?query=${encodeURIComponent(searchTerm)}&page=${currentPage}&size=${PRODUCTS_PER_PAGE}`);
+        } else {
+            apiCall = api.get(`/products/all?page=${currentPage}&size=${PRODUCTS_PER_PAGE}`);
+        }
+
+        apiCall
             .then((res) => {
                 const products = Array.isArray(res.data.content) ? res.data.content : [];
                 setAllProducts(products);
-                setFilteredProducts(products);
 
+                // Apply category filter if selected
+                let productsToShow = products;
+                if (selectedCategory && selectedCategory.trim() !== "") {
+                    productsToShow = products.filter(product => {
+                        const category = product && product.category != null ? String(product.category) : "";
+                        return category.toLowerCase() === selectedCategory.toLowerCase();
+                    });
+                }
+
+                setFilteredProducts(productsToShow);
                 setTotalPages(res.data.totalPages);
                 setTotalProducts(res.data.totalElements);
             })
@@ -91,9 +110,11 @@ const CustomerHome = () => {
                 console.error("Error fetching products:", err);
                 setAllProducts([]);
                 setFilteredProducts([]);
+                setTotalPages(0);
+                setTotalProducts(0);
             })
             .finally(() => setIsLoadingProducts(false));
-    }, [currentPage]);
+    }, [currentPage, searchTerm]);
 
     useEffect(() => {
         const storedCustomer = localStorage.getItem('customer');
@@ -106,46 +127,60 @@ const CustomerHome = () => {
         }
     }, [location]);
 
+    // Apply category filter when category changes
     useEffect(() => {
-        let productsToFilter = [...allProducts];
-
-        if (searchTerm) {
-            productsToFilter = productsToFilter.filter(product =>
-                product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                (product.description && product.description.toLowerCase().includes(searchTerm.toLowerCase()))
-            );
-        }
-
-        if (selectedCategory) {
-            productsToFilter = productsToFilter.filter(product => {
+        if (selectedCategory && selectedCategory.trim() !== "") {
+            const filtered = allProducts.filter(product => {
                 const category = product && product.category != null ? String(product.category) : "";
                 return category.toLowerCase() === selectedCategory.toLowerCase();
             });
+            setFilteredProducts(filtered);
+            // Update total products count for filtered results
+            setTotalProducts(filtered.length);
+            setTotalPages(Math.ceil(filtered.length / PRODUCTS_PER_PAGE));
+        } else {
+            setFilteredProducts(allProducts);
+            // Reset to original total when no category filter
+            if (allProducts.length > 0) {
+                // We need to refetch to get the correct total
+                api.get(`/products/all?page=0&size=1`)
+                    .then((res) => {
+                        setTotalProducts(res.data.totalElements);
+                        setTotalPages(res.data.totalPages);
+                    })
+                    .catch(() => { });
+            }
         }
-
-        setFilteredProducts(productsToFilter);
-    }, [searchTerm, selectedCategory, allProducts]);
+    }, [selectedCategory, allProducts]);
 
     const handleAddToCart = async (product, e) => {
         e.preventDefault();
         e.stopPropagation();
         if (!customer) {
-            alert("Please log in to add items to your cart.");
+            warning("Please log in to add items to your cart.");
             navigate('/login');
             return;
         }
         try {
             await addToCart(product, 1);
-            alert(`${product.name} ✅ added to cart!`);
+            success(`${product.name} added to cart!`);
         } catch (err) {
             console.error("Error adding to cart:", err);
-            alert("Failed to add item to cart. Please try again.");
+            error("Failed to add item to cart. Please try again.");
         }
     };
 
     const handlePageChange = (newPage) => {
         setCurrentPage(newPage);
-        window.scrollTo(0, 0);
+        // Scroll to top of products section
+        setTimeout(() => {
+            const productsSection = document.getElementById('featured-products');
+            if (productsSection) {
+                productsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            } else {
+                window.scrollTo(0, 0);
+            }
+        }, 100);
     };
 
     useEffect(() => {
@@ -226,8 +261,8 @@ const CustomerHome = () => {
                         {/* Badge */}
                         <div
                             className={`inline-flex items-center gap-2 px-4 py-2 bg-green-100 rounded-full transition-all duration-1000 delay-200 ${isVisible
-                                    ? 'opacity-100 translate-y-0'
-                                    : 'opacity-0 -translate-y-4'
+                                ? 'opacity-100 translate-y-0'
+                                : 'opacity-0 -translate-y-4'
                                 }`}
                         >
                             <svg className="w-5 h-5 text-green-700" fill="currentColor" viewBox="0 0 20 20">
@@ -239,8 +274,8 @@ const CustomerHome = () => {
                         {/* Headline */}
                         <h1
                             className={`text-5xl lg:text-6xl xl:text-7xl font-bold leading-tight transition-all duration-1000 delay-300 ${isVisible
-                                    ? 'opacity-100 translate-x-0'
-                                    : 'opacity-0 -translate-x-8'
+                                ? 'opacity-100 translate-x-0'
+                                : 'opacity-0 -translate-x-8'
                                 }`}
                         >
                             <span className="text-gray-900">Shop Green,</span>
@@ -251,8 +286,8 @@ const CustomerHome = () => {
                         {/* Description */}
                         <p
                             className={`text-lg lg:text-xl text-gray-600 leading-relaxed max-w-lg transition-all duration-1000 delay-400 ${isVisible
-                                    ? 'opacity-100 translate-x-0'
-                                    : 'opacity-0 translate-x-8'
+                                ? 'opacity-100 translate-x-0'
+                                : 'opacity-0 translate-x-8'
                                 }`}
                         >
                             Discover sustainable products that make a difference. Every purchase helps protect our planet.
@@ -261,8 +296,8 @@ const CustomerHome = () => {
                         {/* CTA Buttons */}
                         <div
                             className={`flex flex-col sm:flex-row gap-4 transition-all duration-1000 delay-500 ${isVisible
-                                    ? 'opacity-100 translate-y-0'
-                                    : 'opacity-0 translate-y-4'
+                                ? 'opacity-100 translate-y-0'
+                                : 'opacity-0 translate-y-4'
                                 }`}
                         >
                             <button
@@ -288,8 +323,8 @@ const CustomerHome = () => {
                     {/* Right Side - Feature Cards & Banner */}
                     <div
                         className={`space-y-6 transition-all duration-1000 delay-600 ${isVisible
-                                ? 'opacity-100 translate-x-0'
-                                : 'opacity-0 translate-x-8'
+                            ? 'opacity-100 translate-x-0'
+                            : 'opacity-0 translate-x-8'
                             }`}
                     >
                         {/* Feature Cards */}
@@ -402,26 +437,77 @@ const CustomerHome = () => {
 
             {/* Featured Products Section */}
             <section id="featured-products" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-                <h2 className="text-4xl font-bold text-gray-900 text-center mb-12">Featured Products</h2>
+                <div className="flex items-center justify-between mb-8">
+                    <h2 className="text-4xl font-bold text-gray-900">Featured Products</h2>
+                    {!isLoadingProducts && (
+                        <div className="flex items-center gap-2 px-4 py-2 bg-green-50 rounded-lg border border-green-200">
+                            <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                            </svg>
+                            <span className="text-sm font-semibold text-green-700">
+                                {filteredProducts.length} {filteredProducts.length === 1 ? 'Product' : 'Products'}
+                            </span>
+                        </div>
+                    )}
+                </div>
 
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
                     {(searchTerm || selectedCategory) && (
-                        <div className="flex items-center justify-between mb-8">
-                            <div>
+                        <div className="mb-8 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                            <div className="flex flex-wrap items-center gap-4">
                                 {searchTerm && (
-                                    <p className="text-lg text-gray-700 mb-2">
-                                        Results for: <span className="font-semibold text-green-600">"{searchTerm}"</span>
-                                    </p>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-sm text-gray-600">Search:</span>
+                                        <span className="px-3 py-1 bg-white border border-green-200 rounded-full text-sm font-semibold text-green-700">
+                                            "{searchTerm}"
+                                        </span>
+                                        <button
+                                            onClick={() => {
+                                                setSearchTerm("");
+                                                const params = new URLSearchParams(location.search);
+                                                params.delete('search');
+                                                navigate({ search: params.toString() });
+                                            }}
+                                            className="text-gray-400 hover:text-red-500 transition-colors"
+                                        >
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                            </svg>
+                                        </button>
+                                    </div>
                                 )}
                                 {selectedCategory && (
-                                    <p className="text-lg text-gray-700">
-                                        Category: <span className="font-semibold text-green-600 uppercase">{selectedCategory}</span>
-                                    </p>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-sm text-gray-600">Category:</span>
+                                        <span className="px-3 py-1 bg-white border border-green-200 rounded-full text-sm font-semibold text-green-700 uppercase">
+                                            {selectedCategory}
+                                        </span>
+                                        <button
+                                            onClick={() => {
+                                                setSelectedCategory("");
+                                                const params = new URLSearchParams(location.search);
+                                                params.delete('category');
+                                                navigate({ search: params.toString() });
+                                            }}
+                                            className="text-gray-400 hover:text-red-500 transition-colors"
+                                        >
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                            </svg>
+                                        </button>
+                                    </div>
                                 )}
-                                {!isLoadingProducts && (
-                                    <p className="text-sm text-gray-500 mt-2">
-                                        {filteredProducts.length} {filteredProducts.length === 1 ? 'product' : 'products'} found
-                                    </p>
+                                {(searchTerm || selectedCategory) && (
+                                    <button
+                                        onClick={() => {
+                                            setSearchTerm("");
+                                            setSelectedCategory("");
+                                            navigate('/CustomerHome');
+                                        }}
+                                        className="ml-auto px-4 py-1.5 text-sm font-semibold text-gray-700 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                                    >
+                                        Clear All Filters
+                                    </button>
                                 )}
                             </div>
                         </div>
@@ -430,71 +516,83 @@ const CustomerHome = () => {
                     {isLoadingProducts ? (
                         <LoadingSpinner />
                     ) : filteredProducts.length > 0 ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                            {filteredProducts.map((product) => (
-                                <Link
-                                    to={`/product/${product.id}`}
-                                    key={product.id}
-                                    className="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-2xl 
+                        <>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
+                                {filteredProducts.map((product) => (
+                                    <Link
+                                        to={`/product/${product.id}`}
+                                        key={product.id}
+                                        className="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-2xl 
                                          transition-all duration-300 border border-gray-100 hover-lift"
-                                >
-                                    <div className="relative overflow-hidden bg-gradient-to-br from-green-50 to-emerald-50 aspect-square">
-                                        <img
-                                            src={product.imageUrl || (product.imageUrls && product.imageUrls.length > 0 ? product.imageUrls[0] : 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgZmlsbD0iI2YzZjRmNiIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMjAiIGZpbGw9IiM5Y2EzYWYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5ObyBJbWFnZTwvdGV4dD48L3N2Zz4=')}
-                                            alt={product.name}
-                                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                                            onError={(e) => {
-                                                e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgZmlsbD0iI2YzZjRmNiIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMjAiIGZpbGw9IiM5Y2EzYWYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5ObyBJbWFnZTwvdGV4dD48L3N2Zz4=';
-                                            }}
-                                        />
-                                        {product.stockQuantity <= 0 && (
-                                            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center">
-                                                <span className="text-white font-bold text-lg uppercase tracking-wide">Out of Stock</span>
-                                            </div>
-                                        )}
-                                        {product.stockQuantity > 0 && product.stockQuantity <= 10 && (
-                                            <div className="absolute top-3 right-3 bg-yellow-400 text-yellow-900 text-xs font-bold 
+                                    >
+                                        <div className="relative overflow-hidden bg-gradient-to-br from-green-50 to-emerald-50 aspect-square">
+                                            <img
+                                                src={product.imageUrl || (product.imageUrls && product.imageUrls.length > 0 ? product.imageUrls[0] : 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgZmlsbD0iI2YzZjRmNiIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMjAiIGZpbGw9IiM5Y2EzYWYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5ObyBJbWFnZTwvdGV4dD48L3N2Zz4=')}
+                                                alt={product.name}
+                                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                                onError={(e) => {
+                                                    e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgZmlsbD0iI2YzZjRmNiIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMjAiIGZpbGw9IiM5Y2EzYWYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5ObyBJbWFnZTwvdGV4dD48L3N2Zz4=';
+                                                }}
+                                            />
+                                            {product.stockQuantity <= 0 && (
+                                                <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center">
+                                                    <span className="text-white font-bold text-lg uppercase tracking-wide">Out of Stock</span>
+                                                </div>
+                                            )}
+                                            {product.stockQuantity > 0 && product.stockQuantity <= 10 && (
+                                                <div className="absolute top-3 right-3 bg-yellow-400 text-yellow-900 text-xs font-bold 
                                                       px-3 py-1 rounded-full shadow-lg animate-bounce-subtle">
-                                                Only {product.stockQuantity} left!
-                                            </div>
-                                        )}
-                                    </div>
+                                                    Only {product.stockQuantity} left!
+                                                </div>
+                                            )}
+                                        </div>
 
-                                    <div className="p-5">
-                                        <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-2">
-                                            {product.category || 'Product'}
-                                        </p>
-                                        <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2 
+                                        <div className="p-5">
+                                            <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-2">
+                                                {product.category || 'Product'}
+                                            </p>
+                                            <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2 
                                                  group-hover:text-green-600 transition-colors">
-                                            {product.name}
-                                        </h3>
-                                        <p className="text-sm text-gray-600 mb-4 line-clamp-2">
-                                            {product.description}
-                                        </p>
+                                                {product.name}
+                                            </h3>
+                                            <p className="text-sm text-gray-600 mb-4 line-clamp-2">
+                                                {product.description}
+                                            </p>
 
-                                        <div className="flex items-center justify-between gap-3">
-                                            <span className="text-2xl font-bold text-green-600">
-                                                ₹{product.price.toFixed(2)}
-                                            </span>
-                                            <button
-                                                onClick={(e) => handleAddToCart(product, e)}
-                                                disabled={product.stockQuantity <= 0}
-                                                className="px-5 py-2.5 bg-green-700 text-white text-sm font-semibold rounded-lg 
+                                            <div className="flex items-center justify-between gap-3">
+                                                <span className="text-2xl font-bold text-green-600">
+                                                    ₹{product.price.toFixed(2)}
+                                                </span>
+                                                <button
+                                                    onClick={(e) => handleAddToCart(product, e)}
+                                                    disabled={product.stockQuantity <= 0}
+                                                    className="px-5 py-2.5 bg-green-700 text-white text-sm font-semibold rounded-lg 
                                                      hover:bg-green-800 hover:shadow-lg hover:scale-105 transition-all duration-300
                                                      disabled:bg-gray-300 disabled:cursor-not-allowed disabled:hover:scale-100
                                                      flex items-center gap-2 whitespace-nowrap"
-                                            >
-                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                                                        d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                                                </svg>
-                                                {product.stockQuantity <= 0 ? 'Out of Stock' : 'Add to Cart'}
-                                            </button>
+                                                >
+                                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                                                            d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                                                    </svg>
+                                                    {product.stockQuantity <= 0 ? 'Out of Stock' : 'Add to Cart'}
+                                                </button>
+                                            </div>
                                         </div>
-                                    </div>
-                                </Link>
-                            ))}
-                        </div>
+                                    </Link>
+                                ))}
+                            </div>
+                            {/* Pagination */}
+                            {totalPages > 1 && (
+                                <div className="mt-8">
+                                    <Pagination
+                                        currentPage={currentPage}
+                                        totalPages={totalPages}
+                                        onPageChange={handlePageChange}
+                                    />
+                                </div>
+                            )}
+                        </>
                     ) : (
                         <div className="bg-white rounded-2xl shadow-sm p-16 text-center">
                             <div className="w-24 h-24 gradient-green rounded-full flex items-center justify-center 
@@ -522,14 +620,6 @@ const CustomerHome = () => {
                                 </button>
                             )}
                         </div>
-
-                    )}
-                    {totalPages > 1 && (
-                        <Pagination
-                            currentPage={currentPage}
-                            totalPages={totalPages}
-                            onPageChange={handlePageChange}
-                        />
                     )}
                 </div>
             </section>
