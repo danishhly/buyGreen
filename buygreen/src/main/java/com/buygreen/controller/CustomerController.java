@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -112,6 +113,29 @@ public class CustomerController {
             return ResponseEntity.ok(Map.of("message", "Password changed successfully"));
         } else {
             return ResponseEntity.badRequest().body(Map.of("message", "Invalid old password"));
+        }
+    }
+
+    @PutMapping("/customers/update-profile")
+    public ResponseEntity<?> updateProfile(@RequestBody Customers updatedCustomer, Principal principal) {
+        String userEmail = principal.getName();
+        
+        Customers updated = service.updateProfile(userEmail, updatedCustomer);
+        
+        if (updated != null) {
+            return ResponseEntity.ok(Map.of(
+                "message", "Profile updated successfully",
+                "customer", Map.of(
+                    "id", updated.getId(),
+                    "name", updated.getName(),
+                    "email", updated.getEmail(),
+                    "phone", updated.getPhone() != null ? updated.getPhone() : "",
+                    "address", updated.getAddress() != null ? updated.getAddress() : "",
+                    "role", updated.getRole()
+                )
+            ));
+        } else {
+            return ResponseEntity.badRequest().body(Map.of("message", "Failed to update profile"));
         }
     }
 

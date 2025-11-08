@@ -126,4 +126,26 @@ public class CustomerServiceImplementation implements CustomerService, UserDetai
         return false;
     }
 
+    @Override
+    public Customers updateProfile(String email, Customers updatedCustomer) {
+        Customers customer = repo.findByEmail(email);
+        if (customer == null) {
+            return null;
+        }
+
+        // Update only allowed fields (name, phone, address)
+        // Email and password should be updated through separate endpoints
+        if (updatedCustomer.getName() != null && !updatedCustomer.getName().trim().isEmpty()) {
+            customer.setName(updatedCustomer.getName());
+        }
+        if (updatedCustomer.getPhone() != null) {
+            customer.setPhone(updatedCustomer.getPhone());
+        }
+        if (updatedCustomer.getAddress() != null) {
+            customer.setAddress(updatedCustomer.getAddress());
+        }
+
+        return repo.save(customer);
+    }
+
 }

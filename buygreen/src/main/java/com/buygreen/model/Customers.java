@@ -20,6 +20,8 @@ public class Customers implements UserDetails {
     String email;
     String password;
     String role;
+    String phone;
+    String address;
 
     public Customers() {
         super();
@@ -121,5 +123,21 @@ public class Customers implements UserDetails {
 
     public void setResetTokenExpiry(LocalDateTime resetTokenExpiry) {
         this.resetTokenExpiry = resetTokenExpiry;
+    }
+
+    public String getPhone() {
+        return phone;
+    }
+
+    public void setPhone(String phone) {
+        this.phone = phone;
+    }
+
+    public String getAddress() {
+        return address;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
     }
 }

@@ -20,6 +20,7 @@ public class Wishlist {
 
     //we store these details to make fetching the wishlist faster for the frontend
     private String productName;
+    @Column(length = 1024)
     private String productImageUrl;
     private BigDecimal price;
 

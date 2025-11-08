@@ -16,4 +16,5 @@ public interface CustomerService {
     String createPasswordResetToken(String email);
     boolean resetPassword(String token, String newPassword);
     Page<Customers> getAllCustomers(Pageable pageable);
+    Customers updateProfile(String email, Customers updatedCustomer);
 }
