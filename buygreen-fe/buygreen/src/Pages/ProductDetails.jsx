@@ -6,6 +6,8 @@ import ImageSlider from '../Component/ImageSlider'
 import ReviewList from '../Component/ReviewList.jsx';
 import ReviewForm from '../Component/ReviewForm.jsx';
 import { useToast } from '../Component/Toast';
+import { addToRecentlyViewed } from '../utils/productHistory';
+import RecentlyViewed from '../Component/RecentlyViewed';
 
 const LoadingSpinner = () => (
     <div className="flex justify-center items-center min-h-screen">
@@ -90,8 +92,14 @@ const ProductDetails = () => {
         const fetchProduct = async () => {
             try {
                 const response = await api.get(`/products/${productId}`);
-                setProduct(response.data);
+                const productData = response.data;
+                setProduct(productData);
                 setFetchError(null);
+                
+                // Track product view for recently viewed and recommendations
+                if (productData) {
+                    addToRecentlyViewed(productData);
+                }
             } catch (err) {
                 console.error("Error fetching product:", err);
                 setFetchError(err.message || "Failed to load product");
@@ -428,6 +436,11 @@ const ProductDetails = () => {
                             />
                         </div>
                     </div>
+                </div>
+
+                {/* Recently Viewed Products */}
+                <div className="mt-12">
+                    <RecentlyViewed limit={4} />
                 </div>
             </div>
         </div>

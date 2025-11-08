@@ -9,6 +9,7 @@ public class OrderRequest {
     private BigDecimal totalAmount;
     private List<OrderItemRequest> items;
     private String shippingAddress;
+    private String couponCode;
 
     public Long getCustomerId() {
         return customerId;
@@ -40,6 +41,14 @@ public class OrderRequest {
 
     public void setShippingAddress(String shippingAddress) {
         this.shippingAddress = shippingAddress;
+    }
+
+    public String getCouponCode() {
+        return couponCode;
+    }
+
+    public void setCouponCode(String couponCode) {
+        this.couponCode = couponCode;
     }
 
     public static class OrderItemRequest {

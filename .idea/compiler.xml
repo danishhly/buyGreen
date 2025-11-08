@@ -12,6 +12,9 @@
         <module name="buygreen" />
       </profile>
     </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="buygreen" target="17" />
+    </bytecodeTargetLevel>
   </component>
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">

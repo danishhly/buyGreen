@@ -54,6 +54,7 @@ public class SecurityConfig {
                         .requestMatchers("/orders/**").authenticated()
                         .requestMatchers("/payments/**").authenticated()
                         .requestMatchers("/wishlist/**").authenticated() // <-- SECURE NEW ENDPOINT
+                        .requestMatchers("/coupons/validate").authenticated()
 
                         // Deny all other requests by default
                         .anyRequest().authenticated()

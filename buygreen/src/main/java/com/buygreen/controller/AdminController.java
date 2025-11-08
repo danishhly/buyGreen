@@ -1,8 +1,11 @@
 package com.buygreen.controller;
 
 
+import com.buygreen.model.Coupon;
 import com.buygreen.model.Customers;
 import com.buygreen.model.Order;
+import com.buygreen.repository.CouponRepository;
+import com.buygreen.service.CouponService;
 import com.buygreen.service.CustomerService;
 import com.buygreen.service.OrderService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +26,12 @@ public class AdminController {
 
     @Autowired
     private CustomerService customerService;
+    
+    @Autowired
+    private CouponService couponService;
+    
+    @Autowired
+    private CouponRepository couponRepository;
 
     @GetMapping("/orders")
     public ResponseEntity<Page<Order>> getAllOrders(Pageable pageable) {
@@ -87,6 +96,66 @@ public class AdminController {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("message", "Failed to update order status: " + e.getMessage()));
+        }
+    }
+
+    // Coupon Management Endpoints
+    @GetMapping("/coupons")
+    public ResponseEntity<List<Coupon>> getAllCoupons() {
+        List<Coupon> coupons = couponRepository.findAll();
+        return ResponseEntity.ok(coupons);
+    }
+
+    @PostMapping("/coupons")
+    public ResponseEntity<?> createCoupon(@RequestBody Coupon coupon) {
+        try {
+            // Validate coupon code uniqueness
+            if (couponRepository.findByCode(coupon.getCode().toUpperCase()).isPresent()) {
+                return ResponseEntity.badRequest().body(Map.of("message", "Coupon code already exists"));
+            }
+            
+            coupon.setCode(coupon.getCode().toUpperCase());
+            Coupon savedCoupon = couponRepository.save(coupon);
+            return ResponseEntity.ok(savedCoupon);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Failed to create coupon: " + e.getMessage()));
+        }
+    }
+
+    @PutMapping("/coupons/{id}")
+    public ResponseEntity<?> updateCoupon(@PathVariable Long id, @RequestBody Coupon coupon) {
+        try {
+            Coupon existingCoupon = couponRepository.findById(id)
+                    .orElseThrow(() -> new IllegalArgumentException("Coupon not found"));
+            
+            // Check if code is being changed and if new code already exists
+            if (!existingCoupon.getCode().equalsIgnoreCase(coupon.getCode())) {
+                if (couponRepository.findByCode(coupon.getCode().toUpperCase()).isPresent()) {
+                    return ResponseEntity.badRequest().body(Map.of("message", "Coupon code already exists"));
+                }
+            }
+            
+            coupon.setId(id);
+            coupon.setCode(coupon.getCode().toUpperCase());
+            Coupon updatedCoupon = couponRepository.save(coupon);
+            return ResponseEntity.ok(updatedCoupon);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Failed to update coupon: " + e.getMessage()));
+        }
+    }
+
+    @DeleteMapping("/coupons/{id}")
+    public ResponseEntity<?> deleteCoupon(@PathVariable Long id) {
+        try {
+            if (!couponRepository.existsById(id)) {
+                return ResponseEntity.badRequest().body(Map.of("message", "Coupon not found"));
+            }
+            couponRepository.deleteById(id);
+            return ResponseEntity.ok(Map.of("message", "Coupon deleted successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Failed to delete coupon: " + e.getMessage()));
         }
     }
 }

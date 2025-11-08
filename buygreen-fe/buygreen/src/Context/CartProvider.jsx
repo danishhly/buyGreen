@@ -161,7 +161,7 @@ export const CartProvider = ({ children }) => {
         return response.data;
     };
 
-    const placeOrder = async (shippingAddress = null) => {
+    const placeOrder = async (shippingAddress = null, couponCode = null) => {
         const customer = getCustomer();
         if (!customer) throw new Error("User is not logged in.");
 
@@ -184,7 +184,8 @@ export const CartProvider = ({ children }) => {
                 price: item.price,
                 quantity: item.quantity
             })),
-            shippingAddress: address || null
+            shippingAddress: address || null,
+            couponCode: couponCode || null
         };
 
         const response = await api.post("/orders/create", payload, {

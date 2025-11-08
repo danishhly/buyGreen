@@ -2,12 +2,17 @@ import React, { useEffect, useState } from 'react';
 import { useCart } from '../Hooks/UseCart';
 import { Link, useNavigate } from 'react-router-dom';
 import { useToast } from '../Component/Toast';
+import api from '../api/axiosConfig';
 
 const CartPage = () => {
     const { success, error, warning } = useToast();
     const { cartItems, addToCart, decrementFromCart, createPaymentOrder, placeOrder, isLoading } = useCart();
     const navigate = useNavigate();
     const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+    const [couponCode, setCouponCode] = useState('');
+    const [appliedCoupon, setAppliedCoupon] = useState(null);
+    const [isValidatingCoupon, setIsValidatingCoupon] = useState(false);
+    const [discount, setDiscount] = useState(0);
 
     const handleDecrease = async (item) => {
         try {
@@ -49,14 +54,14 @@ const CartPage = () => {
         try {
             setIsProcessingPayment(true);
 
-            const totalAmount = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+            const totalAmount = subtotal - discount;
             const paymentOrder = await createPaymentOrder(totalAmount);
 
             const razorpayKey = import.meta.env.VITE_RAZORPAY_KEY_ID;
             const canUseRazorpay = Boolean(razorpayKey) && window.Razorpay && !paymentOrder.mock;
 
             if (!canUseRazorpay) {
-                const order = await placeOrder();
+                const order = await placeOrder(null, appliedCoupon?.code);
                 navigate('/order-success', { state: { order } });
                 return;
             }
@@ -69,7 +74,7 @@ const CartPage = () => {
                 order_id: paymentOrder.id,
                 handler: async () => {
                     try {
-                        const order = await placeOrder();
+                        const order = await placeOrder(null, appliedCoupon?.code);
                         navigate('/order-success', { state: { order } });
                     } catch (err) {
                         console.error('Failed to create order after payment', err);
@@ -97,9 +102,50 @@ const CartPage = () => {
     };
 
     // Calculate the total price
-    const total = cartItems.reduce((sum, item) => {
+    const subtotal = cartItems.reduce((sum, item) => {
         return sum + (item.price * item.quantity);
     }, 0);
+    
+    const total = subtotal - discount;
+
+    const handleApplyCoupon = async () => {
+        if (!couponCode.trim()) {
+            warning('Please enter a coupon code');
+            return;
+        }
+
+        setIsValidatingCoupon(true);
+        try {
+            const response = await api.post('/coupons/validate', {
+                code: couponCode.trim().toUpperCase(),
+                orderTotal: subtotal
+            });
+
+            if (response.data.valid) {
+                setAppliedCoupon(response.data.coupon);
+                setDiscount(Number(response.data.discount));
+                success(`Coupon "${couponCode.toUpperCase()}" applied! You saved ₹${Number(response.data.discount).toFixed(2)}`);
+            } else {
+                error(response.data.message || 'Invalid coupon code');
+                setAppliedCoupon(null);
+                setDiscount(0);
+            }
+        } catch (err) {
+            console.error('Error validating coupon:', err);
+            error(err.response?.data?.message || 'Failed to validate coupon. Please try again.');
+            setAppliedCoupon(null);
+            setDiscount(0);
+        } finally {
+            setIsValidatingCoupon(false);
+        }
+    };
+
+    const handleRemoveCoupon = () => {
+        setCouponCode('');
+        setAppliedCoupon(null);
+        setDiscount(0);
+        success('Coupon removed');
+    };
 
     return (
         <div className="min-h-screen bg-gray-50">
@@ -200,11 +246,76 @@ const CartPage = () => {
                         <div className="lg:col-span-1">
                             <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6 sticky top-24">
                                 <h3 className="text-lg font-semibold text-gray-700 mb-4">Order Summary</h3>
+                                
+                                {/* Coupon Code Section */}
+                                <div className="mb-4 pb-4 border-b border-gray-200">
+                                    {!appliedCoupon ? (
+                                        <div className="space-y-2">
+                                            <label className="block text-sm font-medium text-gray-700">Have a coupon code?</label>
+                                            <div className="flex gap-2">
+                                                <input
+                                                    type="text"
+                                                    value={couponCode}
+                                                    onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                                                    placeholder="Enter code"
+                                                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-sm"
+                                                    onKeyPress={(e) => {
+                                                        if (e.key === 'Enter') {
+                                                            handleApplyCoupon();
+                                                        }
+                                                    }}
+                                                />
+                                                <button
+                                                    onClick={handleApplyCoupon}
+                                                    disabled={isValidatingCoupon || !couponCode.trim()}
+                                                    className="px-4 py-2 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed text-sm"
+                                                >
+                                                    {isValidatingCoupon ? (
+                                                        <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                        </svg>
+                                                    ) : (
+                                                        'Apply'
+                                                    )}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg">
+                                            <div className="flex items-center gap-2">
+                                                <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                </svg>
+                                                <div>
+                                                    <p className="text-sm font-semibold text-green-800">{appliedCoupon.code}</p>
+                                                    <p className="text-xs text-green-600">₹{discount.toFixed(2)} discount applied</p>
+                                                </div>
+                                            </div>
+                                            <button
+                                                onClick={handleRemoveCoupon}
+                                                className="text-red-600 hover:text-red-700 transition-colors"
+                                                title="Remove coupon"
+                                            >
+                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+
                                 <div className="border-b border-gray-200 pb-4 mb-4">
                                     <div className="flex justify-between items-center mb-2">
                                         <span className="text-gray-600">Subtotal</span>
-                                        <span className="text-gray-900 font-semibold">₹{total.toFixed(2)}</span>
+                                        <span className="text-gray-900 font-semibold">₹{subtotal.toFixed(2)}</span>
                                     </div>
+                                    {discount > 0 && (
+                                        <div className="flex justify-between items-center mb-2">
+                                            <span className="text-gray-600">Discount</span>
+                                            <span className="text-green-600 font-semibold">-₹{discount.toFixed(2)}</span>
+                                        </div>
+                                    )}
                                     <div className="flex justify-between items-center">
                                         <span className="text-gray-600">Shipping</span>
                                         <span className="text-green-600 font-semibold">Free</span>

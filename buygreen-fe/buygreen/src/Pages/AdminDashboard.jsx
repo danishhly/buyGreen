@@ -821,9 +821,353 @@ const CustomerList = () => {
 };
 
 
+// --- 3.5. Coupon Manager Component ---
+const CouponManager = () => {
+    const { success, error } = useToast();
+    const [coupons, setCoupons] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [formData, setFormData] = useState({
+        code: '',
+        discountType: 'PERCENTAGE',
+        discountValue: '',
+        minOrderAmount: '',
+        maxDiscount: '',
+        expiryDate: '',
+        usageLimit: '',
+        isActive: true
+    });
+    const [editingId, setEditingId] = useState(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    useEffect(() => {
+        fetchCoupons();
+    }, []);
+
+    const fetchCoupons = async () => {
+        setIsLoading(true);
+        try {
+            const response = await api.get('/admin/coupons');
+            setCoupons(response.data);
+        } catch (err) {
+            console.error("Error fetching coupons:", err);
+            error("Failed to load coupons.");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleChange = (e) => {
+        const { name, value, type, checked } = e.target;
+        setFormData(prev => ({
+            ...prev,
+            [name]: type === 'checkbox' ? checked : value
+        }));
+    };
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setIsSubmitting(true);
+
+        try {
+            const payload = {
+                ...formData,
+                code: formData.code.toUpperCase().trim(),
+                discountValue: formData.discountValue ? parseFloat(formData.discountValue) : null,
+                minOrderAmount: formData.minOrderAmount ? parseFloat(formData.minOrderAmount) : null,
+                maxDiscount: formData.maxDiscount ? parseFloat(formData.maxDiscount) : null,
+                expiryDate: formData.expiryDate || null,
+                usageLimit: formData.usageLimit ? parseInt(formData.usageLimit, 10) : null
+            };
+
+            if (editingId) {
+                await api.put(`/admin/coupons/${editingId}`, payload);
+                success("Coupon updated successfully!");
+            } else {
+                await api.post("/admin/coupons", payload);
+                success("Coupon created successfully!");
+            }
+
+            setEditingId(null);
+            setFormData({
+                code: '',
+                discountType: 'PERCENTAGE',
+                discountValue: '',
+                minOrderAmount: '',
+                maxDiscount: '',
+                expiryDate: '',
+                usageLimit: '',
+                isActive: true
+            });
+            fetchCoupons();
+        } catch (err) {
+            console.error("Error saving coupon:", err);
+            error(err.response?.data?.message || "Failed to save coupon. Please try again.");
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleDelete = async (id) => {
+        if (!window.confirm("Are you sure you want to delete this coupon?")) {
+            return;
+        }
+
+        try {
+            await api.delete(`/admin/coupons/${id}`);
+            success("Coupon deleted successfully!");
+            fetchCoupons();
+        } catch (err) {
+            console.error("Error deleting coupon:", err);
+            error("Failed to delete coupon. Please try again.");
+        }
+    };
+
+    const handleEdit = (coupon) => {
+        setEditingId(coupon.id);
+        setFormData({
+            code: coupon.code,
+            discountType: coupon.discountType,
+            discountValue: coupon.discountValue?.toString() || '',
+            minOrderAmount: coupon.minOrderAmount?.toString() || '',
+            maxDiscount: coupon.maxDiscount?.toString() || '',
+            expiryDate: coupon.expiryDate ? new Date(coupon.expiryDate).toISOString().split('T')[0] : '',
+            usageLimit: coupon.usageLimit?.toString() || '',
+            isActive: coupon.isActive !== false
+        });
+    };
+
+    const handleCancel = () => {
+        setEditingId(null);
+        setFormData({
+            code: '',
+            discountType: 'PERCENTAGE',
+            discountValue: '',
+            minOrderAmount: '',
+            maxDiscount: '',
+            expiryDate: '',
+            usageLimit: '',
+            isActive: true
+        });
+    };
+
+    if (isLoading) return <LoadingSpinner />;
+
+    return (
+        <div className="space-y-6">
+            {/* Coupon Form */}
+            <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-8">
+                <h2 className="text-2xl font-bold text-gray-900 mb-6">
+                    {editingId ? 'Edit Coupon' : 'Create New Coupon'}
+                </h2>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Coupon Code *</label>
+                            <input
+                                type="text"
+                                name="code"
+                                value={formData.code}
+                                onChange={handleChange}
+                                required
+                                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none"
+                                placeholder="SAVE20"
+                                disabled={editingId !== null}
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Discount Type *</label>
+                            <select
+                                name="discountType"
+                                value={formData.discountType}
+                                onChange={handleChange}
+                                required
+                                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none"
+                            >
+                                <option value="PERCENTAGE">Percentage</option>
+                                <option value="FIXED">Fixed Amount</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Discount Value * {formData.discountType === 'PERCENTAGE' ? '(%)' : '(₹)'}
+                            </label>
+                            <input
+                                type="number"
+                                name="discountValue"
+                                value={formData.discountValue}
+                                onChange={handleChange}
+                                required
+                                min="0"
+                                step={formData.discountType === 'PERCENTAGE' ? '1' : '0.01'}
+                                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none"
+                                placeholder={formData.discountType === 'PERCENTAGE' ? '20' : '100'}
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Min Order Amount (₹)</label>
+                            <input
+                                type="number"
+                                name="minOrderAmount"
+                                value={formData.minOrderAmount}
+                                onChange={handleChange}
+                                min="0"
+                                step="0.01"
+                                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none"
+                                placeholder="0"
+                            />
+                        </div>
+                        {formData.discountType === 'PERCENTAGE' && (
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Max Discount (₹)</label>
+                                <input
+                                    type="number"
+                                    name="maxDiscount"
+                                    value={formData.maxDiscount}
+                                    onChange={handleChange}
+                                    min="0"
+                                    step="0.01"
+                                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none"
+                                    placeholder="500"
+                                />
+                            </div>
+                        )}
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Expiry Date</label>
+                            <input
+                                type="date"
+                                name="expiryDate"
+                                value={formData.expiryDate}
+                                onChange={handleChange}
+                                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Usage Limit</label>
+                            <input
+                                type="number"
+                                name="usageLimit"
+                                value={formData.usageLimit}
+                                onChange={handleChange}
+                                min="1"
+                                className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none"
+                                placeholder="Unlimited"
+                            />
+                        </div>
+                        <div className="flex items-center">
+                            <input
+                                type="checkbox"
+                                name="isActive"
+                                checked={formData.isActive}
+                                onChange={handleChange}
+                                className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                            />
+                            <label className="ml-2 text-sm font-medium text-gray-700">Active</label>
+                        </div>
+                    </div>
+                    <div className="flex gap-3">
+                        <button
+                            type="submit"
+                            disabled={isSubmitting}
+                            className="px-6 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                        >
+                            {isSubmitting ? 'Saving...' : editingId ? 'Update Coupon' : 'Create Coupon'}
+                        </button>
+                        {editingId && (
+                            <button
+                                type="button"
+                                onClick={handleCancel}
+                                className="px-6 py-3 bg-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-300 transition-colors"
+                            >
+                                Cancel
+                            </button>
+                        )}
+                    </div>
+                </form>
+            </div>
+
+            {/* Coupons List */}
+            <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+                <h2 className="text-3xl font-bold text-gray-900 p-8 mb-0 flex items-center gap-3 bg-gradient-to-r from-green-50 to-transparent border-b border-gray-200">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-700">
+                        <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"></path>
+                        <path d="M3 5v14a2 2 0 0 0 2 2h16v-5"></path>
+                        <path d="M18 12a2 2 0 0 0 0 4h4v-4Z"></path>
+                    </svg>
+                    All Coupons ({coupons.length})
+                </h2>
+                {coupons.length === 0 ? (
+                    <p className="p-6 text-gray-500">No coupons found. Create your first coupon above.</p>
+                ) : (
+                    <div className="overflow-x-auto">
+                        <table className="w-full">
+                            <thead>
+                                <tr className="border-b-2 border-gray-200 bg-gradient-to-r from-gray-50 to-gray-100">
+                                    <th className="text-left p-4 font-bold text-gray-700">Code</th>
+                                    <th className="text-left p-4 font-bold text-gray-700">Type</th>
+                                    <th className="text-left p-4 font-bold text-gray-700">Value</th>
+                                    <th className="text-left p-4 font-bold text-gray-700">Min Order</th>
+                                    <th className="text-left p-4 font-bold text-gray-700">Used</th>
+                                    <th className="text-left p-4 font-bold text-gray-700">Status</th>
+                                    <th className="text-left p-4 font-bold text-gray-700">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {coupons.map(coupon => (
+                                    <tr key={coupon.id} className="border-b border-gray-100 hover:bg-green-50 transition-colors duration-150">
+                                        <td className="p-4">
+                                            <span className="font-mono font-bold text-green-700">{coupon.code}</span>
+                                        </td>
+                                        <td className="p-4 text-gray-800 capitalize">{coupon.discountType?.toLowerCase()}</td>
+                                        <td className="p-4 text-gray-800">
+                                            {coupon.discountType === 'PERCENTAGE'
+                                                ? `${coupon.discountValue}%`
+                                                : `₹${coupon.discountValue}`
+                                            }
+                                        </td>
+                                        <td className="p-4 text-gray-800">
+                                            {coupon.minOrderAmount ? `₹${coupon.minOrderAmount.toFixed(2)}` : 'No minimum'}
+                                        </td>
+                                        <td className="p-4 text-gray-800">
+                                            {coupon.usedCount || 0} / {coupon.usageLimit || '∞'}
+                                        </td>
+                                        <td className="p-4">
+                                            <span className={`px-3 py-1.5 text-xs font-bold rounded-full shadow-sm ${coupon.isActive
+                                                ? 'bg-green-100 text-green-800 border border-green-200'
+                                                : 'bg-gray-100 text-gray-800 border border-gray-200'
+                                                }`}>
+                                                {coupon.isActive ? 'Active' : 'Inactive'}
+                                            </span>
+                                        </td>
+                                        <td className="p-4">
+                                            <div className="flex gap-2">
+                                                <button
+                                                    onClick={() => handleEdit(coupon)}
+                                                    className="px-3 py-1.5 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors"
+                                                >
+                                                    Edit
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDelete(coupon.id)}
+                                                    className="px-3 py-1.5 bg-red-600 text-white text-sm font-semibold rounded-lg hover:bg-red-700 transition-colors"
+                                                >
+                                                    Delete
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
+
 // --- 4. Main AdminDashboard Component (The Tab Controller) ---
 function AdminDashboard() {
-    const [activeTab, setActiveTab] = useState('products'); // 'products', 'orders', 'customers'
+    const [activeTab, setActiveTab] = useState('products'); // 'products', 'orders', 'customers', 'coupons'
 
     const renderTabContent = () => {
         switch (activeTab) {
@@ -833,6 +1177,8 @@ function AdminDashboard() {
                 return <OrderList />;
             case 'customers':
                 return <CustomerList />;
+            case 'coupons':
+                return <CouponManager />;
             default:
                 return <ProductManager />;
         }

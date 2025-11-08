@@ -67,6 +67,24 @@ const OrderSuccess = () => {
                     </div>
 
                     <div className="pt-6 border-t-2 border-gray-200">
+                        {order.couponCode && order.discountAmount && Number(order.discountAmount) > 0 && (
+                            <div className="mb-4 space-y-2">
+                                <div className="flex justify-between items-center text-sm">
+                                    <span className="text-gray-600">Subtotal</span>
+                                    <span className="text-gray-900 font-semibold">
+                                        ₹{(Number(order.totalAmount) + Number(order.discountAmount)).toFixed(2)}
+                                    </span>
+                                </div>
+                                <div className="flex justify-between items-center text-sm">
+                                    <span className="text-gray-600">
+                                        Discount ({order.couponCode})
+                                    </span>
+                                    <span className="text-green-600 font-semibold">
+                                        -₹{Number(order.discountAmount).toFixed(2)}
+                                    </span>
+                                </div>
+                            </div>
+                        )}
                         <div className="flex justify-between items-center">
                             <span className="text-xl font-semibold text-gray-700">Total</span>
                             <span className="text-3xl font-bold text-green-700">

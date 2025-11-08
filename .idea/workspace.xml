@@ -4,7 +4,17 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="14a45398-9928-4017-83df-a62e4ea4fb01" name="Changes" comment="" />
+    <list default="true" id="14a45398-9928-4017-83df-a62e4ea4fb01" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/buygreen-fe/buygreen/src/App.css" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/buygreen-fe/buygreen/src/App.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/buygreen-fe/buygreen/src/App.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/buygreen-fe/buygreen/src/assets/react.svg" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/buygreen-fe/buygreen/src/index.css" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/buygreen-fe/buygreen/src/main.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/buygreen-fe/buygreen/src/main.jsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/buygreen/src/main/java/com/buygreen/model/User.java" beforeDir="false" afterPath="$PROJECT_DIR$/buygreen/src/main/java/com/buygreen/model/Users.java" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -17,12 +27,15 @@
       </list>
     </option>
   </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
   <component name="ProblemsViewState">
     <option name="selectedTabId" value="AISelfReview" />
   </component>
-  <component name="ProjectColorInfo"><![CDATA[{
-  "associatedIndex": 6
-}]]></component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 6
+}</component>
   <component name="ProjectId" id="34SgwwXiPrTTdLZqx0N5svFRQU7" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
@@ -32,6 +45,8 @@
   "keyToString": {
     "ModuleVcsDetector.initialDetectionPerformed": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "git-widget-placeholder": "main",
     "ignore.virus.scanning.warn.message": "true",
     "kotlin-language-version-configured": "true",
     "last_opened_file_path": "U:/buyGreen",
@@ -45,6 +60,19 @@
       <recent name="U:\buyGreen\buygreen\src\test\java\com\buygreen" />
       <recent name="U:\buyGreen\buygreen\src\main\java\com\buygreen" />
     </key>
+  </component>
+  <component name="RunManager">
+    <configuration default="true" type="JetRunConfigurationType">
+      <module name="buyGreen" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration default="true" type="KotlinStandaloneScriptRunConfigurationType">
+      <module name="buyGreen" />
+      <option name="filePath" />
+      <method v="2" />
+    </configuration>
   </component>
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">

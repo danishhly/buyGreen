@@ -3,6 +3,9 @@ import { useNavigate, Link, useLocation } from 'react-router-dom';
 import api from '../api/axiosConfig';
 import { useCart } from '../Hooks/UseCart';
 import { useToast } from '../Component/Toast';
+import cache from '../utils/cache';
+import RecentlyViewed from '../Component/RecentlyViewed';
+import ProductRecommendations from '../Component/ProductRecommendations';
 
 const LoadingSpinner = () => (
     <div className="flex justify-center items-center h-64">
@@ -658,6 +661,12 @@ const CustomerHome = () => {
                     )}
                 </div>
             </section>
+
+            {/* Recently Viewed Products */}
+            <RecentlyViewed limit={6} />
+
+            {/* Product Recommendations */}
+            <ProductRecommendations limit={6} />
 
             {/* About Section */}
             <section id="about" className="bg-white py-16 lg:py-24">

@@ -29,6 +29,9 @@ public class Order {
     
     private String shippingAddress;
     private String trackingNumber;
+    
+    private String couponCode;
+    private BigDecimal discountAmount = BigDecimal.ZERO;
 
     @JsonManagedReference
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)

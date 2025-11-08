@@ -30,12 +30,31 @@ public class OrderService {
     
     @Autowired
     private CustomerService customerService;
+    
+    @Autowired
+    private CouponService couponService;
 
     @Transactional
     public Order placeOrder(OrderRequest orderRequest) {
         Order order = new Order();
         order.setCustomerId(orderRequest.getCustomerId());
-        order.setTotalAmount(orderRequest.getTotalAmount());
+        
+        // Apply coupon discount if provided
+        BigDecimal finalAmount = orderRequest.getTotalAmount();
+        if (orderRequest.getCouponCode() != null && !orderRequest.getCouponCode().trim().isEmpty()) {
+            try {
+                Coupon coupon = couponService.applyCoupon(orderRequest.getCouponCode(), orderRequest.getTotalAmount());
+                BigDecimal discount = coupon.calculateDiscount(orderRequest.getTotalAmount());
+                finalAmount = orderRequest.getTotalAmount().subtract(discount);
+                order.setCouponCode(coupon.getCode());
+                order.setDiscountAmount(discount);
+            } catch (Exception e) {
+                // If coupon application fails, proceed without discount
+                System.err.println("Failed to apply coupon: " + e.getMessage());
+            }
+        }
+        
+        order.setTotalAmount(finalAmount);
         order.setOrderDate(LocalDateTime.now());
         order.setStatus(Order.OrderStatus.PENDING);
         if (orderRequest.getShippingAddress() != null) {
