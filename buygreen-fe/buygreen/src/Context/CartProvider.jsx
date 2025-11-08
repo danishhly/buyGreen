@@ -161,13 +161,19 @@ export const CartProvider = ({ children }) => {
         return response.data;
     };
 
-    const placeOrder = async () => {
+    const placeOrder = async (shippingAddress = null) => {
         const customer = getCustomer();
         if (!customer) throw new Error("User is not logged in.");
 
         const total = cartItems.reduce((sum, item) => {
             return sum + (item.price * item.quantity);
         }, 0);
+
+        // Get shipping address from customer profile if not provided
+        let address = shippingAddress;
+        if (!address && customer.address) {
+            address = customer.address;
+        }
 
         const payload = {
             customerId: Number(customer.id),
@@ -177,7 +183,8 @@ export const CartProvider = ({ children }) => {
                 productName: item.productName,
                 price: item.price,
                 quantity: item.quantity
-            }))
+            })),
+            shippingAddress: address || null
         };
 
         const response = await api.post("/orders/create", payload, {

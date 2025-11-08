@@ -496,10 +496,33 @@ const ProductManager = () => {
     );
 };
 
+// Status Badge Component
+const StatusBadge = ({ status }) => {
+    const statusConfig = {
+        PENDING: { color: 'bg-yellow-100 text-yellow-800 border-yellow-200', label: 'Pending' },
+        CONFIRMED: { color: 'bg-blue-100 text-blue-800 border-blue-200', label: 'Confirmed' },
+        PROCESSING: { color: 'bg-purple-100 text-purple-800 border-purple-200', label: 'Processing' },
+        SHIPPED: { color: 'bg-indigo-100 text-indigo-800 border-indigo-200', label: 'Shipped' },
+        DELIVERED: { color: 'bg-green-100 text-green-800 border-green-200', label: 'Delivered' },
+        CANCELLED: { color: 'bg-red-100 text-red-800 border-red-200', label: 'Cancelled' }
+    };
+
+    const config = statusConfig[status] || statusConfig.PENDING;
+
+    return (
+        <span className={`px-3 py-1.5 rounded-full text-xs font-semibold border ${config.color}`}>
+            {config.label}
+        </span>
+    );
+};
+
 //  2. Component for Viewing Orders 
 const OrderList = () => {
+    const { success, error } = useToast();
     const [orders, setOrders] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [updatingOrderId, setUpdatingOrderId] = useState(null);
+    const [selectedStatus, setSelectedStatus] = useState({});
 
     const [currentPage, setCurrentPage] = useState(0);
     const [totalPages, setTotalPages] = useState(0);
@@ -527,6 +550,21 @@ const OrderList = () => {
         setCurrentPage(newPage);
     };
 
+    const handleStatusChange = async (orderId, newStatus) => {
+        setUpdatingOrderId(orderId);
+        try {
+            const response = await api.put(`/admin/orders/${orderId}/status`, { status: newStatus });
+            success(`Order #${orderId} status updated to ${newStatus}`);
+            setSelectedStatus({ ...selectedStatus, [orderId]: '' }); // Reset dropdown
+            fetchOrders(currentPage); // Refresh orders
+        } catch (err) {
+            console.error("Error updating order status:", err);
+            error(err.response?.data?.message || "Failed to update order status. Please try again.");
+        } finally {
+            setUpdatingOrderId(null);
+        }
+    };
+
 
     if (isLoading) return <LoadingSpinner />;
 
@@ -543,20 +581,59 @@ const OrderList = () => {
                 <div className="space-y-4 p-6 pt-0">
                     {orders.map(order => (
                         <div key={order.id} className="border-2 border-gray-200 p-6 rounded-xl hover:shadow-md transition-all duration-200 bg-gray-50 hover:bg-white">
-                            <div className="flex justify-between items-center mb-2">
-                                <div>
-                                    <h3 className="text-lg font-bold">Order #{order.id}</h3>
+                            <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-4 mb-4">
+                                <div className="flex-1">
+                                    <div className="flex items-center gap-3 mb-2">
+                                        <h3 className="text-lg font-bold">Order #{order.id}</h3>
+                                        <StatusBadge status={order.status || 'PENDING'} />
+                                    </div>
                                     <p className="text-sm text-gray-600">Customer ID: {order.customerId}</p>
                                     <p className="text-sm text-gray-600">Date: {new Date(order.orderDate).toLocaleString()}</p>
+                                    {order.trackingNumber && (
+                                        <p className="text-sm text-gray-600 mt-1">
+                                            <span className="font-semibold">Tracking:</span> <span className="font-mono">{order.trackingNumber}</span>
+                                        </p>
+                                    )}
+                                    {order.shippingAddress && (
+                                        <p className="text-sm text-gray-600 mt-1">
+                                            <span className="font-semibold">Address:</span> {order.shippingAddress}
+                                        </p>
+                                    )}
                                 </div>
-                                <span className="text-lg text-gray-900 font-semibold">₹{order.totalAmount.toFixed(2)}</span>
+                                <div className="flex flex-col items-end gap-2">
+                                    <span className="text-xl font-bold text-green-700">₹{order.totalAmount.toFixed(2)}</span>
+                                    <div className="flex items-center gap-2">
+                                        <select
+                                            value={selectedStatus[order.id] || order.status || 'PENDING'}
+                                            onChange={(e) => {
+                                                setSelectedStatus({ ...selectedStatus, [order.id]: e.target.value });
+                                                handleStatusChange(order.id, e.target.value);
+                                            }}
+                                            disabled={updatingOrderId === order.id}
+                                            className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-green-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                                        >
+                                            <option value="PENDING">Pending</option>
+                                            <option value="CONFIRMED">Confirmed</option>
+                                            <option value="PROCESSING">Processing</option>
+                                            <option value="SHIPPED">Shipped</option>
+                                            <option value="DELIVERED">Delivered</option>
+                                            <option value="CANCELLED">Cancelled</option>
+                                        </select>
+                                        {updatingOrderId === order.id && (
+                                            <svg className="animate-spin h-4 w-4 text-green-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                        )}
+                                    </div>
+                                </div>
                             </div>
-                            <div className="mt-2 border-t pt-2">
-                                <h4 className="font-semibold text-sm">Items:</h4>
-                                <ul className="list-disc pl-5">
-                                    {order.items.map(item => (
+                            <div className="mt-4 border-t pt-4">
+                                <h4 className="font-semibold text-sm mb-2">Items:</h4>
+                                <ul className="list-disc pl-5 space-y-1">
+                                    {order.items?.map(item => (
                                         <li key={item.id} className="text-sm text-gray-700">
-                                            {item.productName} (x{item.quantity}) - ₹{item.price.toFixed(2)}
+                                            {item.productName} (x{item.quantity}) - ₹{item.price.toFixed(2)} each
                                         </li>
                                     ))}
                                 </ul>
