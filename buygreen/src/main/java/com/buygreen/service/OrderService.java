@@ -31,6 +31,10 @@ public class OrderService {
         order.setCustomerId(orderRequest.getCustomerId());
         order.setTotalAmount(orderRequest.getTotalAmount());
         order.setOrderDate(LocalDateTime.now());
+        order.setStatus(Order.OrderStatus.PENDING);
+        if (orderRequest.getShippingAddress() != null) {
+            order.setShippingAddress(orderRequest.getShippingAddress());
+        }
 
         List<OrderRequest.OrderItemRequest> requestedItems = orderRequest.getItems();
         if (requestedItems == null || requestedItems.isEmpty()) {
@@ -69,5 +73,22 @@ public class OrderService {
         return orderRepository.hasCustomerPurchasedProduct(customerId, productId);
     }
 
+    public Order updateOrderStatus(Long orderId, Order.OrderStatus newStatus) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("Order not found"));
+        order.setStatus(newStatus);
+        
+        // Generate tracking number when order is shipped
+        if (newStatus == Order.OrderStatus.SHIPPED && order.getTrackingNumber() == null) {
+            order.setTrackingNumber("TRK" + String.format("%08d", orderId));
+        }
+        
+        return orderRepository.save(order);
+    }
+
+    public Order getOrderById(Long orderId) {
+        return orderRepository.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("Order not found"));
+    }
 
 }

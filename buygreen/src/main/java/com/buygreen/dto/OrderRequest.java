@@ -8,6 +8,7 @@ public class OrderRequest {
     private Long customerId;
     private BigDecimal totalAmount;
     private List<OrderItemRequest> items;
+    private String shippingAddress;
 
     public Long getCustomerId() {
         return customerId;
@@ -31,6 +32,14 @@ public class OrderRequest {
 
     public void setItems(List<OrderItemRequest> items) {
         this.items = items;
+    }
+
+    public String getShippingAddress() {
+        return shippingAddress;
+    }
+
+    public void setShippingAddress(String shippingAddress) {
+        this.shippingAddress = shippingAddress;
     }
 
     public static class OrderItemRequest {
