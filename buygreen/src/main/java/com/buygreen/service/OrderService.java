@@ -24,6 +24,12 @@ public class OrderService {
 
     @Autowired
     private CartRepository cartRepository;
+    
+    @Autowired
+    private EmailService emailService;
+    
+    @Autowired
+    private CustomerService customerService;
 
     @Transactional
     public Order placeOrder(OrderRequest orderRequest) {
@@ -58,6 +64,21 @@ public class OrderService {
         // Clear cart after successful order
         cartRepository.deleteByCustomerId(orderRequest.getCustomerId());
 
+        // Send order confirmation email
+        try {
+            var customer = customerService.getCustomerById(orderRequest.getCustomerId());
+            if (customer != null && customer.getEmail() != null) {
+                emailService.sendOrderConfirmationEmail(
+                    customer.getEmail(),
+                    savedOrder,
+                    customer.getName()
+                );
+            }
+        } catch (Exception e) {
+            // Log error but don't fail the order placement
+            System.err.println("Failed to send order confirmation email: " + e.getMessage());
+        }
+
         return savedOrder;
     }
     public List<Order> getOrdersByCustomer(Long customerId) {
@@ -73,9 +94,11 @@ public class OrderService {
         return orderRepository.hasCustomerPurchasedProduct(customerId, productId);
     }
 
+    @Transactional
     public Order updateOrderStatus(Long orderId, Order.OrderStatus newStatus) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new IllegalArgumentException("Order not found"));
+        Order.OrderStatus oldStatus = order.getStatus();
         order.setStatus(newStatus);
         
         // Generate tracking number when order is shipped
@@ -83,7 +106,26 @@ public class OrderService {
             order.setTrackingNumber("TRK" + String.format("%08d", orderId));
         }
         
-        return orderRepository.save(order);
+        Order updatedOrder = orderRepository.save(order);
+        
+        // Send email notification if status changed
+        if (oldStatus != newStatus) {
+            try {
+                var customer = customerService.getCustomerById(order.getCustomerId());
+                if (customer != null && customer.getEmail() != null) {
+                    emailService.sendOrderStatusUpdateEmail(
+                        customer.getEmail(),
+                        updatedOrder,
+                        customer.getName()
+                    );
+                }
+            } catch (Exception e) {
+                // Log error but don't fail the status update
+                System.err.println("Failed to send order status update email: " + e.getMessage());
+            }
+        }
+        
+        return updatedOrder;
     }
 
     public Order getOrderById(Long orderId) {

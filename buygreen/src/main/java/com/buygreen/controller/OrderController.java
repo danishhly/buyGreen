@@ -27,5 +27,15 @@ public class OrderController {
     public List<Order> getOrders(@PathVariable Long customerId) {
         return orderService.getOrdersByCustomer(customerId);
     }
+
+    @GetMapping("/{orderId}")
+    public ResponseEntity<Order> getOrderById(@PathVariable Long orderId) {
+        try {
+            Order order = orderService.getOrderById(orderId);
+            return ResponseEntity.ok(order);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
 }
 

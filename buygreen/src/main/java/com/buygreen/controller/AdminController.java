@@ -60,4 +60,33 @@ public class AdminController {
             return ResponseEntity.badRequest().body(Map.of("message", "Failed to delete customer: " + e.getMessage()));
         }
     }
+
+    @PutMapping("/orders/{orderId}/status")
+    public ResponseEntity<?> updateOrderStatus(
+            @PathVariable Long orderId,
+            @RequestBody Map<String, String> request) {
+        try {
+            String statusStr = request.get("status");
+            if (statusStr == null) {
+                return ResponseEntity.badRequest().body(Map.of("message", "Status is required"));
+            }
+
+            Order.OrderStatus newStatus;
+            try {
+                newStatus = Order.OrderStatus.valueOf(statusStr.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                return ResponseEntity.badRequest().body(Map.of("message", "Invalid status. Valid values: PENDING, CONFIRMED, PROCESSING, SHIPPED, DELIVERED, CANCELLED"));
+            }
+
+            Order updatedOrder = orderService.updateOrderStatus(orderId, newStatus);
+            return ResponseEntity.ok(Map.of(
+                    "message", "Order status updated successfully",
+                    "order", updatedOrder
+            ));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Failed to update order status: " + e.getMessage()));
+        }
+    }
 }
