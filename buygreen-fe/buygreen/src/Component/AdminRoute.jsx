@@ -19,7 +19,18 @@ const AdminRoute = () => {
         const isAdmin = customer && customer.role === 'admin';
 
         //if they are admin, show the child component (Outlet)
-        //OtherWise, redirect them to the customer home page
-        return isAdmin ? <Outlet /> : <Navigate to ="/CustomerHome" replace />
+        //Otherwise, redirect them to login page (admin access is restricted)
+        if (!customer) {
+            return <Navigate to="/login" replace />;
+        }
+        
+        if (!isAdmin) {
+            // Clear customer data if they're not admin
+            localStorage.removeItem('customer');
+            localStorage.removeItem('token');
+            return <Navigate to="/login" replace />;
+        }
+        
+        return <Outlet />;
 }
  export default AdminRoute;

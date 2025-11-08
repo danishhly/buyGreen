@@ -11,6 +11,7 @@ import Profile from './Pages/Profile.jsx';
 import { CartProvider } from './Context/CartProvider.jsx'
 import Navbar from './Component/Navbar.jsx';
 import Footer from './Component/Footer.jsx';
+import AdminLayout from './Component/AdminLayout.jsx';
 import React from 'react';
 import ProductDetails from './Pages/ProductDetails.jsx';
 import ForgotPassword from "./Pages/ForgotPassword.jsx"; 
@@ -69,7 +70,7 @@ function App() {
         {/* === ADMIN ROUTES === */}
         {/* These pages require a user to be an ADMIN */}
         <Route element={<AdminRoute />}>
-          <Route element={<AppLayout />}>
+          <Route element={<AdminLayout />}>
             <Route path="/AdminDashboard" element={<AdminDashboard />} />
           </Route>
         </Route>

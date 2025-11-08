@@ -10,7 +10,6 @@ function Signup() {
         name: "",
         email: "",
         password: "",
-        role: "customer",
     });
 
     const [showPassword, setShowPassword] = useState(false);
@@ -31,7 +30,12 @@ function Signup() {
         setMessage("");
         
         try {
-            const response = await api.post("/signup", formData);
+            // Always set role to "customer" - admin accounts can only be created by backend
+            const signupData = {
+                ...formData,
+                role: "customer"
+            };
+            const response = await api.post("/signup", signupData);
             setMessage(response.data.message || "Signup successful!");
 
             setTimeout(() => {
@@ -192,22 +196,6 @@ function Signup() {
                                     )}
                                 </button>
                             </div>
-                        </div>
-
-                        <div>
-                            <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-2">
-                                Role
-                            </label>
-                            <select
-                                id="role"
-                                name="role"
-                                value={formData.role}
-                                onChange={handleChange}
-                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all bg-white"
-                            >
-                                <option value="customer">Customer</option>
-                                <option value="admin">Admin</option>
-                            </select>
                         </div>
 
                         <button

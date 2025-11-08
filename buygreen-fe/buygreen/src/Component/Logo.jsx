@@ -8,6 +8,11 @@ import React from 'react';
 const Logo = ({ 
     className = "" 
 }) => {
+    // Check if className contains text-white to determine color scheme
+    const isWhite = className.includes('text-white');
+    const buyColor = isWhite ? 'text-white' : 'text-gray-900';
+    const greenColor = isWhite ? 'text-green-400' : 'text-green-600';
+    
     return (
         <span 
             className={`font-bold tracking-tight ${className}`}
@@ -19,7 +24,7 @@ const Logo = ({
             }}
         >
             <span 
-                className="text-gray-900"
+                className={buyColor}
                 style={{
                     fontWeight: 700
                 }}
@@ -27,7 +32,7 @@ const Logo = ({
                 buy
             </span>
             <span 
-                className="text-green-600"
+                className={greenColor}
                 style={{
                     fontWeight: 700
                 }}

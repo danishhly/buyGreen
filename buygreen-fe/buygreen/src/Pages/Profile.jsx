@@ -13,15 +13,21 @@ const ProfilePage = () => {
     
     // Account Information state
     const [isEditing, setIsEditing] = useState(false);
+    const [isChangingEmail, setIsChangingEmail] = useState(false);
     const [accountData, setAccountData] = useState({
         name: '',
         email: '',
         phone: '',
         address: ''
     });
+    const [emailChangeData, setEmailChangeData] = useState({
+        newEmail: '',
+        password: ''
+    });
     const [accountMessage, setAccountMessage] = useState('');
     const [accountIsError, setAccountIsError] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    const [isChangingEmailLoading, setIsChangingEmailLoading] = useState(false);
 
     // 1. Load customer data from localStorage on component mount
     useEffect(() => {
@@ -133,8 +139,96 @@ const ProfilePage = () => {
             address: customer.address || ''
         });
         setIsEditing(false);
+        setIsChangingEmail(false);
+        setEmailChangeData({ newEmail: '', password: '' });
         setAccountMessage('');
         setAccountIsError(false);
+    };
+
+    // Handler for email change
+    const handleEmailChange = (e) => {
+        const { name, value } = e.target;
+        setEmailChangeData(prev => ({
+            ...prev,
+            [name]: value
+        }));
+        if (accountMessage) {
+            setAccountMessage('');
+        }
+    };
+
+    // Handler to save email change
+    const handleSaveEmailChange = async (e) => {
+        e.preventDefault();
+        setIsChangingEmailLoading(true);
+        setAccountMessage('');
+        setAccountIsError(false);
+
+        try {
+            // Validate email format
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(emailChangeData.newEmail)) {
+                setAccountMessage('Please enter a valid email address.');
+                setAccountIsError(true);
+                setIsChangingEmailLoading(false);
+                return;
+            }
+
+            // Check if new email is same as current
+            if (emailChangeData.newEmail.toLowerCase() === accountData.email.toLowerCase()) {
+                setAccountMessage('New email must be different from current email.');
+                setAccountIsError(true);
+                setIsChangingEmailLoading(false);
+                return;
+            }
+
+            if (!emailChangeData.password) {
+                setAccountMessage('Password is required to change email.');
+                setAccountIsError(true);
+                setIsChangingEmailLoading(false);
+                return;
+            }
+
+            // Call the backend API endpoint
+            const response = await api.post('/customers/change-email', {
+                newEmail: emailChangeData.newEmail,
+                password: emailChangeData.password
+            });
+
+            // Update customer in localStorage with new email and token
+            const updatedCustomerData = response.data.customer;
+            const updatedCustomer = {
+                ...customer,
+                email: updatedCustomerData.email
+            };
+            localStorage.setItem('customer', JSON.stringify(updatedCustomer));
+            localStorage.setItem('token', response.data.token);
+            setCustomer(updatedCustomer);
+
+            // Update account data
+            setAccountData(prev => ({
+                ...prev,
+                email: updatedCustomerData.email
+            }));
+
+            // Show success message
+            setAccountMessage('Email changed successfully! Your session has been updated.');
+            setAccountIsError(false);
+            setIsChangingEmail(false);
+            setEmailChangeData({ newEmail: '', password: '' });
+
+            // Clear success message after 5 seconds
+            setTimeout(() => {
+                setAccountMessage('');
+            }, 5000);
+
+        } catch (error) {
+            console.error('Error changing email:', error);
+            setAccountMessage(error.response?.data?.message || 'Failed to change email. Please check your password and try again.');
+            setAccountIsError(true);
+        } finally {
+            setIsChangingEmailLoading(false);
+        }
     };
 
     // 3. Handler to submit the new password
@@ -247,22 +341,98 @@ const ProfilePage = () => {
                                     <label className="block text-sm font-medium text-gray-700 mb-2">
                                         Email
                                     </label>
-                                    <div className="relative">
-                                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                            <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                                            </svg>
+                                    {!isChangingEmail ? (
+                                        <div className="relative">
+                                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                                </svg>
+                                            </div>
+                                            <input
+                                                type="email"
+                                                name="email"
+                                                value={accountData.email}
+                                                readOnly
+                                                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 cursor-not-allowed"
+                                                placeholder="your.email@example.com"
+                                            />
+                                            {isEditing && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setIsChangingEmail(true)}
+                                                    className="absolute right-2 top-1/2 -translate-y-1/2 px-3 py-1.5 text-sm font-semibold text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors"
+                                                >
+                                                    Change Email
+                                                </button>
+                                            )}
                                         </div>
-                                        <input
-                                            type="email"
-                                            name="email"
-                                            value={accountData.email}
-                                            readOnly
-                                            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-gray-700 cursor-not-allowed"
-                                            placeholder="your.email@example.com"
-                                            title="Email cannot be changed"
-                                        />
-                                    </div>
+                                    ) : (
+                                        <div className="space-y-3">
+                                            <div className="relative">
+                                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                    <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                                    </svg>
+                                                </div>
+                                                <input
+                                                    type="email"
+                                                    name="newEmail"
+                                                    value={emailChangeData.newEmail}
+                                                    onChange={handleEmailChange}
+                                                    className="w-full pl-10 pr-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all"
+                                                    placeholder="Enter new email address"
+                                                    required
+                                                />
+                                            </div>
+                                            <div className="relative">
+                                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                                    <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                                    </svg>
+                                                </div>
+                                                <input
+                                                    type="password"
+                                                    name="password"
+                                                    value={emailChangeData.password}
+                                                    onChange={handleEmailChange}
+                                                    className="w-full pl-10 pr-4 py-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all"
+                                                    placeholder="Enter your password to confirm"
+                                                    required
+                                                />
+                                            </div>
+                                            <div className="flex gap-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={handleSaveEmailChange}
+                                                    disabled={isChangingEmailLoading}
+                                                    className="flex-1 px-4 py-2 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                                >
+                                                    {isChangingEmailLoading ? (
+                                                        <>
+                                                            <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                            </svg>
+                                                            Changing...
+                                                        </>
+                                                    ) : (
+                                                        'Save Email'
+                                                    )}
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        setIsChangingEmail(false);
+                                                        setEmailChangeData({ newEmail: '', password: '' });
+                                                    }}
+                                                    disabled={isChangingEmailLoading}
+                                                    className="px-4 py-2 bg-gray-200 text-gray-700 font-semibold rounded-lg hover:bg-gray-300 transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed"
+                                                >
+                                                    Cancel
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* Phone */}

@@ -16,13 +16,13 @@ const LoadingSpinner = () => (
 
 // pagination control
 
-const Pagination = ({currentPage, totalPages, onPageChange }) => {
+const Pagination = ({ currentPage, totalPages, onPageChange }) => {
     return (
         <div className="flex justify-center items-center gap-4 mt-12">
             <button
-            onClick={() => onPageChange(currentPage - 1)}
-            disabled={currentPage === 0}
-            className="px-4 py-2 bg-gray-900 text-white font-semibold rounded-lg hover:bg-gray-800 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+                onClick={() => onPageChange(currentPage - 1)}
+                disabled={currentPage === 0}
+                className="px-4 py-2 bg-gray-900 text-white font-semibold rounded-lg hover:bg-gray-800 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
             >
                 &larr; previous
             </button>
@@ -30,11 +30,11 @@ const Pagination = ({currentPage, totalPages, onPageChange }) => {
                 Page {currentPage + 1} of {totalPages}
             </span>
             <button onClick={() => onPageChange(currentPage + 1)}
-            disabled={currentPage + 1 >= totalPages}
-            className="px-4 py-2 bg-gray-900 text-white font-semibold rounded-lg hover:bg-gray-800 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+                disabled={currentPage + 1 >= totalPages}
+                className="px-4 py-2 bg-gray-900 text-white font-semibold rounded-lg hover:bg-gray-800 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
             >
-                Next &rarr; 
-        </button>
+                Next &rarr;
+            </button>
         </div>
     )
 }
@@ -48,7 +48,7 @@ const CustomerHome = () => {
     const location = useLocation();
     const { addToCart } = useCart();
     const [isVisible, setIsVisible] = useState(false);
-    
+
     // Contact form state
     const [formData, setFormData] = useState({
         name: '',
@@ -145,7 +145,7 @@ const CustomerHome = () => {
 
     const handlePageChange = (newPage) => {
         setCurrentPage(newPage);
-        window.scrollTo(0, 0); 
+        window.scrollTo(0, 0);
     };
 
     useEffect(() => {
@@ -176,16 +176,16 @@ const CustomerHome = () => {
         try {
             // Simulate API call - Replace this with actual API endpoint when available
             // const response = await api.post('/contact', formData);
-            
+
             // For now, simulate a delay to show loading state
             await new Promise(resolve => setTimeout(resolve, 1500));
-            
+
             // Log the form data (in production, this would be sent to your backend)
             console.log('Contact form submission:', formData);
-            
+
             // Show success message
             setSubmitStatus('success');
-            
+
             // Reset form
             setFormData({
                 name: '',
@@ -206,7 +206,7 @@ const CustomerHome = () => {
         } catch (error) {
             console.error('Error submitting contact form:', error);
             setSubmitStatus('error');
-            
+
             // Clear error message after 5 seconds
             setTimeout(() => {
                 setSubmitStatus(null);
@@ -224,12 +224,11 @@ const CustomerHome = () => {
                     {/* Left Side - Hero Content */}
                     <div className="space-y-8">
                         {/* Badge */}
-                        <div 
-                            className={`inline-flex items-center gap-2 px-4 py-2 bg-green-100 rounded-full transition-all duration-1000 delay-200 ${
-                                isVisible 
-                                    ? 'opacity-100 translate-y-0' 
+                        <div
+                            className={`inline-flex items-center gap-2 px-4 py-2 bg-green-100 rounded-full transition-all duration-1000 delay-200 ${isVisible
+                                    ? 'opacity-100 translate-y-0'
                                     : 'opacity-0 -translate-y-4'
-                            }`}
+                                }`}
                         >
                             <svg className="w-5 h-5 text-green-700" fill="currentColor" viewBox="0 0 20 20">
                                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
@@ -238,36 +237,33 @@ const CustomerHome = () => {
                         </div>
 
                         {/* Headline */}
-                        <h1 
-                            className={`text-5xl lg:text-6xl xl:text-7xl font-bold leading-tight transition-all duration-1000 delay-300 ${
-                                isVisible 
-                                    ? 'opacity-100 translate-x-0' 
+                        <h1
+                            className={`text-5xl lg:text-6xl xl:text-7xl font-bold leading-tight transition-all duration-1000 delay-300 ${isVisible
+                                    ? 'opacity-100 translate-x-0'
                                     : 'opacity-0 -translate-x-8'
-                            }`}
+                                }`}
                         >
                             <span className="text-gray-900">Shop Green,</span>
                             <br />
                             <span className="text-green-600">Live Better</span>
-                    </h1>
+                        </h1>
 
                         {/* Description */}
-                        <p 
-                            className={`text-lg lg:text-xl text-gray-600 leading-relaxed max-w-lg transition-all duration-1000 delay-400 ${
-                                isVisible 
-                                    ? 'opacity-100 translate-x-0' 
+                        <p
+                            className={`text-lg lg:text-xl text-gray-600 leading-relaxed max-w-lg transition-all duration-1000 delay-400 ${isVisible
+                                    ? 'opacity-100 translate-x-0'
                                     : 'opacity-0 translate-x-8'
-                            }`}
+                                }`}
                         >
                             Discover sustainable products that make a difference. Every purchase helps protect our planet.
                         </p>
 
                         {/* CTA Buttons */}
-                        <div 
-                            className={`flex flex-col sm:flex-row gap-4 transition-all duration-1000 delay-500 ${
-                                isVisible 
-                                    ? 'opacity-100 translate-y-0' 
+                        <div
+                            className={`flex flex-col sm:flex-row gap-4 transition-all duration-1000 delay-500 ${isVisible
+                                    ? 'opacity-100 translate-y-0'
                                     : 'opacity-0 translate-y-4'
-                            }`}
+                                }`}
                         >
                             <button
                                 onClick={() => {
@@ -290,12 +286,11 @@ const CustomerHome = () => {
                     </div>
 
                     {/* Right Side - Feature Cards & Banner */}
-                    <div 
-                        className={`space-y-6 transition-all duration-1000 delay-600 ${
-                            isVisible 
-                                ? 'opacity-100 translate-x-0' 
+                    <div
+                        className={`space-y-6 transition-all duration-1000 delay-600 ${isVisible
+                                ? 'opacity-100 translate-x-0'
                                 : 'opacity-0 translate-x-8'
-                        }`}
+                            }`}
                     >
                         {/* Feature Cards */}
                         <div className="space-y-4">
@@ -389,7 +384,7 @@ const CustomerHome = () => {
                             </div>
                             <h3 className="text-lg font-bold text-gray-900 mb-2">Quality Guarantee</h3>
                             <p className="text-sm text-gray-600">30-day money-back guarantee on all purchases</p>
-            </div>
+                        </div>
 
                         {/* Zero Waste Packaging */}
                         <div className="text-center">
@@ -410,130 +405,130 @@ const CustomerHome = () => {
                 <h2 className="text-4xl font-bold text-gray-900 text-center mb-12">Featured Products</h2>
 
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
-                {(searchTerm || selectedCategory) && (
-                <div className="flex items-center justify-between mb-8">
-                    <div>
-                        {searchTerm && (
-                            <p className="text-lg text-gray-700 mb-2">
-                                Results for: <span className="font-semibold text-green-600">"{searchTerm}"</span>
-                            </p>
-                        )}
-                        {selectedCategory && (
-                            <p className="text-lg text-gray-700">
-                                Category: <span className="font-semibold text-green-600 uppercase">{selectedCategory}</span>
-                            </p>
-                        )}
-                        {!isLoadingProducts && (
-                            <p className="text-sm text-gray-500 mt-2">
-                                {filteredProducts.length} {filteredProducts.length === 1 ? 'product' : 'products'} found
-                            </p>
-                        )}
-                    </div>
-                </div>
-                )}
+                    {(searchTerm || selectedCategory) && (
+                        <div className="flex items-center justify-between mb-8">
+                            <div>
+                                {searchTerm && (
+                                    <p className="text-lg text-gray-700 mb-2">
+                                        Results for: <span className="font-semibold text-green-600">"{searchTerm}"</span>
+                                    </p>
+                                )}
+                                {selectedCategory && (
+                                    <p className="text-lg text-gray-700">
+                                        Category: <span className="font-semibold text-green-600 uppercase">{selectedCategory}</span>
+                                    </p>
+                                )}
+                                {!isLoadingProducts && (
+                                    <p className="text-sm text-gray-500 mt-2">
+                                        {filteredProducts.length} {filteredProducts.length === 1 ? 'product' : 'products'} found
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+                    )}
 
-                {isLoadingProducts ? (
-                    <LoadingSpinner />
-                ) : filteredProducts.length > 0 ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                        {filteredProducts.map((product) => (
-                            <Link
-                                to={`/product/${product.id}`}
-                                key={product.id}
-                                className="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-2xl 
+                    {isLoadingProducts ? (
+                        <LoadingSpinner />
+                    ) : filteredProducts.length > 0 ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                            {filteredProducts.map((product) => (
+                                <Link
+                                    to={`/product/${product.id}`}
+                                    key={product.id}
+                                    className="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-2xl 
                                          transition-all duration-300 border border-gray-100 hover-lift"
-                            >
-                                <div className="relative overflow-hidden bg-gradient-to-br from-green-50 to-emerald-50 aspect-square">
-                                    <img
-                                        src={product.imageUrl || (product.imageUrls && product.imageUrls.length > 0 ? product.imageUrls[0] : 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgZmlsbD0iI2YzZjRmNiIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMjAiIGZpbGw9IiM5Y2EzYWYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5ObyBJbWFnZTwvdGV4dD48L3N2Zz4=')}
-                                        alt={product.name}
-                                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                                        onError={(e) => {
-                                            e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgZmlsbD0iI2YzZjRmNiIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMjAiIGZpbGw9IiM5Y2EzYWYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5ObyBJbWFnZTwvdGV4dD48L3N2Zz4=';
-                                        }}
-                                    />
-                                    {product.stockQuantity <= 0 && (
-                                        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center">
-                                            <span className="text-white font-bold text-lg uppercase tracking-wide">Out of Stock</span>
-                                        </div>
-                                    )}
-                                    {product.stockQuantity > 0 && product.stockQuantity <= 10 && (
-                                        <div className="absolute top-3 right-3 bg-yellow-400 text-yellow-900 text-xs font-bold 
+                                >
+                                    <div className="relative overflow-hidden bg-gradient-to-br from-green-50 to-emerald-50 aspect-square">
+                                        <img
+                                            src={product.imageUrl || (product.imageUrls && product.imageUrls.length > 0 ? product.imageUrls[0] : 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgZmlsbD0iI2YzZjRmNiIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMjAiIGZpbGw9IiM5Y2EzYWYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5ObyBJbWFnZTwvdGV4dD48L3N2Zz4=')}
+                                            alt={product.name}
+                                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                            onError={(e) => {
+                                                e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgZmlsbD0iI2YzZjRmNiIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMjAiIGZpbGw9IiM5Y2EzYWYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5ObyBJbWFnZTwvdGV4dD48L3N2Zz4=';
+                                            }}
+                                        />
+                                        {product.stockQuantity <= 0 && (
+                                            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center">
+                                                <span className="text-white font-bold text-lg uppercase tracking-wide">Out of Stock</span>
+                                            </div>
+                                        )}
+                                        {product.stockQuantity > 0 && product.stockQuantity <= 10 && (
+                                            <div className="absolute top-3 right-3 bg-yellow-400 text-yellow-900 text-xs font-bold 
                                                       px-3 py-1 rounded-full shadow-lg animate-bounce-subtle">
-                                            Only {product.stockQuantity} left!
-                                        </div>
-                                    )}
-                                </div>
+                                                Only {product.stockQuantity} left!
+                                            </div>
+                                        )}
+                                    </div>
 
-                                <div className="p-5">
-                                    <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-2">
-                                        {product.category || 'Product'}
-                                    </p>
-                                    <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2 
+                                    <div className="p-5">
+                                        <p className="text-xs text-gray-500 uppercase tracking-wider font-semibold mb-2">
+                                            {product.category || 'Product'}
+                                        </p>
+                                        <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2 
                                                  group-hover:text-green-600 transition-colors">
-                                        {product.name}
-                                    </h3>
-                                    <p className="text-sm text-gray-600 mb-4 line-clamp-2">
-                                        {product.description}
-                                    </p>
+                                            {product.name}
+                                        </h3>
+                                        <p className="text-sm text-gray-600 mb-4 line-clamp-2">
+                                            {product.description}
+                                        </p>
 
-                                    <div className="flex items-center justify-between gap-3">
-                                        <span className="text-2xl font-bold text-green-600">
-                                            ₹{product.price.toFixed(2)}
-                                        </span>
-                                        <button
-                                            onClick={(e) => handleAddToCart(product, e)}
-                                            disabled={product.stockQuantity <= 0}
-                                            className="px-5 py-2.5 bg-green-700 text-white text-sm font-semibold rounded-lg 
+                                        <div className="flex items-center justify-between gap-3">
+                                            <span className="text-2xl font-bold text-green-600">
+                                                ₹{product.price.toFixed(2)}
+                                            </span>
+                                            <button
+                                                onClick={(e) => handleAddToCart(product, e)}
+                                                disabled={product.stockQuantity <= 0}
+                                                className="px-5 py-2.5 bg-green-700 text-white text-sm font-semibold rounded-lg 
                                                      hover:bg-green-800 hover:shadow-lg hover:scale-105 transition-all duration-300
                                                      disabled:bg-gray-300 disabled:cursor-not-allowed disabled:hover:scale-100
                                                      flex items-center gap-2 whitespace-nowrap"
-                                        >
-                                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                                                    d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                                            </svg>
-                                            {product.stockQuantity <= 0 ? 'Out of Stock' : 'Add to Cart'}
-                                        </button>
+                                            >
+                                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                                                        d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                                                </svg>
+                                                {product.stockQuantity <= 0 ? 'Out of Stock' : 'Add to Cart'}
+                                            </button>
+                                        </div>
                                     </div>
-                                </div>
-                            </Link>
-                        ))}
-                    </div>
-                ) : (
-                    <div className="bg-white rounded-2xl shadow-sm p-16 text-center">
-                        <div className="w-24 h-24 gradient-green rounded-full flex items-center justify-center 
-                                      mx-auto mb-6 opacity-20">
-                            <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                                    d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-                            </svg>
+                                </Link>
+                            ))}
                         </div>
-                        <h3 className="text-2xl font-bold text-gray-900 mb-2">No products found</h3>
-                        <p className="text-gray-500 mb-8 max-w-md mx-auto">
-                            {searchTerm || selectedCategory
-                                ? "Try adjusting your search or filter criteria."
-                                : "No products available at the moment."}
-                        </p>
-                        {(searchTerm || selectedCategory) && (
-                            <button
-                                onClick={() => {
-                                    navigate('/CustomerHome');
-                                }}
-                                className="px-6 py-3 gradient-green text-white rounded-full font-semibold 
+                    ) : (
+                        <div className="bg-white rounded-2xl shadow-sm p-16 text-center">
+                            <div className="w-24 h-24 gradient-green rounded-full flex items-center justify-center 
+                                      mx-auto mb-6 opacity-20">
+                                <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                                        d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                                </svg>
+                            </div>
+                            <h3 className="text-2xl font-bold text-gray-900 mb-2">No products found</h3>
+                            <p className="text-gray-500 mb-8 max-w-md mx-auto">
+                                {searchTerm || selectedCategory
+                                    ? "Try adjusting your search or filter criteria."
+                                    : "No products available at the moment."}
+                            </p>
+                            {(searchTerm || selectedCategory) && (
+                                <button
+                                    onClick={() => {
+                                        navigate('/CustomerHome');
+                                    }}
+                                    className="px-6 py-3 gradient-green text-white rounded-full font-semibold 
                                          hover:shadow-lg hover:scale-105 transition-all duration-300"
-                            >
-                                Clear Filters
-                            </button>
-                        )}
-                    </div>
-                    
-                )}
-                  {totalPages > 1 && (
+                                >
+                                    Clear Filters
+                                </button>
+                            )}
+                        </div>
+
+                    )}
+                    {totalPages > 1 && (
                         <Pagination
-                        currentPage={currentPage}
-                        totalPages={totalPages}
-                        onPageChange={handlePageChange}
+                            currentPage={currentPage}
+                            totalPages={totalPages}
+                            onPageChange={handlePageChange}
                         />
                     )}
                 </div>
@@ -546,22 +541,22 @@ const CustomerHome = () => {
                         <h2 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-4">About Us</h2>
                         <div className="w-24 h-1 bg-green-600 mx-auto"></div>
                     </div>
-                    
+
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
                         <div className="space-y-6">
                             <h3 className="text-2xl font-bold text-gray-900">Our Mission</h3>
                             <p className="text-lg text-gray-600 leading-relaxed">
-                                At buygreen., we are committed to making sustainable living accessible to everyone. 
-                                Our mission is to provide high-quality, eco-friendly products that help you reduce 
+                                At buygreen., we are committed to making sustainable living accessible to everyone.
+                                Our mission is to provide high-quality, eco-friendly products that help you reduce
                                 your environmental footprint while maintaining the lifestyle you love.
                             </p>
                             <p className="text-lg text-gray-600 leading-relaxed">
-                                We carefully curate every product in our collection, ensuring they meet our strict 
-                                sustainability standards. From biodegradable materials to carbon-neutral shipping, 
+                                We carefully curate every product in our collection, ensuring they meet our strict
+                                sustainability standards. From biodegradable materials to carbon-neutral shipping,
                                 every aspect of our business is designed with the planet in mind.
                             </p>
                         </div>
-                        
+
                         <div className="space-y-6">
                             <h3 className="text-2xl font-bold text-gray-900">Why Choose Us</h3>
                             <ul className="space-y-4">
@@ -682,7 +677,7 @@ const CustomerHome = () => {
                         {/* Contact Form */}
                         <div className="bg-white rounded-xl p-8 shadow-lg">
                             <h3 className="text-2xl font-bold text-gray-900 mb-6">Send us a Message</h3>
-                            
+
                             {/* Success Message */}
                             {submitStatus === 'success' && (
                                 <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
@@ -713,7 +708,7 @@ const CustomerHome = () => {
                                 </div>
                             )}
 
-                            <form 
+                            <form
                                 onSubmit={handleContactSubmit}
                                 className="space-y-6"
                             >
