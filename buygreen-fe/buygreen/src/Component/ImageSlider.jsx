@@ -44,7 +44,18 @@ const ImageSlider = ({ images = [] }) => {
       <div 
         style={{ backgroundImage: `url(${images[currentIndex]})` }} 
         className="w-full h-full rounded-lg bg-center bg-cover duration-500"
-      ></div>
+      >
+        {/* Preload next image for smoother transitions */}
+        {images[currentIndex + 1] && (
+          <img 
+            src={images[currentIndex + 1]} 
+            alt="" 
+            className="hidden" 
+            loading="lazy"
+            decoding="async"
+          />
+        )}
+      </div>
       
       {/* Left Arrow Button */}
       <button 

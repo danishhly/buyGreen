@@ -12,5 +12,25 @@ export default defineConfig({
     allowedHosts: [
       '34e27de4-5ef2-4ac3-a873-76d4d8983829-00-z74knzzypso4.sisko.replit.dev'
     ]
+  },
+  build: {
+    // Optimize build output
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Separate vendor chunks for better caching
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          'google-auth': ['@react-oauth/google'],
+        }
+      }
+    },
+    // Enable source maps for production debugging (optional)
+    sourcemap: false,
+    // Optimize chunk size
+    chunkSizeWarningLimit: 1000,
+  },
+  // Optimize dependencies
+  optimizeDeps: {
+    include: ['react', 'react-dom', 'react-router-dom', '@react-oauth/google', 'axios']
   }
 })

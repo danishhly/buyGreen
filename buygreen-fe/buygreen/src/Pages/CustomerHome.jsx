@@ -80,6 +80,30 @@ const CustomerHome = () => {
 
     useEffect(() => {
         setIsLoadingProducts(true);
+
+        // Generate cache key
+        const cacheKey = cache.generateKey(
+            searchTerm && searchTerm.trim() !== "" ? '/products/search' : '/products/all',
+            {
+                query: searchTerm,
+                page: currentPage,
+                size: PRODUCTS_PER_PAGE
+            }
+        );
+
+        // Check cache first (only for non-search, non-filtered requests)
+        if (!searchTerm && !selectedCategory) {
+            const cachedData = cache.get(cacheKey);
+            if (cachedData) {
+                setAllProducts(cachedData.content);
+                setFilteredProducts(cachedData.content);
+                setTotalPages(cachedData.totalPages);
+                setTotalProducts(cachedData.totalElements);
+                setIsLoadingProducts(false);
+                return;
+            }
+        }
+
         // Use search endpoint if there's a search term, otherwise use regular endpoint
         let apiCall;
         if (searchTerm && searchTerm.trim() !== "") {
@@ -105,6 +129,15 @@ const CustomerHome = () => {
                 setFilteredProducts(productsToShow);
                 setTotalPages(res.data.totalPages);
                 setTotalProducts(res.data.totalElements);
+
+                // Cache the response (only for non-search, non-filtered requests)
+                if (!searchTerm && !selectedCategory) {
+                    cache.set(cacheKey, {
+                        content: products,
+                        totalPages: res.data.totalPages,
+                        totalElements: res.data.totalElements
+                    }, 2 * 60 * 1000); // 2 minutes TTL for product list
+                }
             })
             .catch((err) => {
                 console.error("Error fetching products:", err);
@@ -529,6 +562,8 @@ const CustomerHome = () => {
                                             <img
                                                 src={product.imageUrl || (product.imageUrls && product.imageUrls.length > 0 ? product.imageUrls[0] : 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgZmlsbD0iI2YzZjRmNiIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMjAiIGZpbGw9IiM5Y2EzYWYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5ObyBJbWFnZTwvdGV4dD48L3N2Zz4=')}
                                                 alt={product.name}
+                                                loading="lazy"
+                                                decoding="async"
                                                 className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                                                 onError={(e) => {
                                                     e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgZmlsbD0iI2YzZjRmNiIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMjAiIGZpbGw9IiM5Y2EzYWYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5ObyBJbWFnZTwvdGV4dD48L3N2Zz4=';

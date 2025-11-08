@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import api from "../api/axiosConfig";
 import { useToast } from "../Component/Toast";
+import { validateRequired, validatePrice, validateStock, validateImageUrls } from "../utils/validation";
 
 // --- LoadingSpinner ---
 const LoadingSpinner = () => (
@@ -105,9 +106,32 @@ const ProductManager = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        if (!formData.name || formData.name.trim() === "" || !formData.price || !formData.imageUrls) {
-            error("Please fill in all required fields (Name, Price, Image URLs).");
+        // Validate required fields
+        const nameValidation = validateRequired(formData.name, "Product name");
+        if (!nameValidation.isValid) {
+            error(nameValidation.message);
             return;
+        }
+
+        const priceValidation = validatePrice(formData.price);
+        if (!priceValidation.isValid) {
+            error(priceValidation.message);
+            return;
+        }
+
+        const imageUrlsValidation = validateImageUrls(formData.imageUrls);
+        if (!imageUrlsValidation.isValid) {
+            error(imageUrlsValidation.message);
+            return;
+        }
+
+        // Validate stock quantity if provided
+        if (formData.stockQuantity && formData.stockQuantity !== "") {
+            const stockValidation = validateStock(formData.stockQuantity);
+            if (!stockValidation.isValid) {
+                error(stockValidation.message);
+                return;
+            }
         }
 
         const imagesArray = formData.imageUrls.split(',')
@@ -117,6 +141,8 @@ const ProductManager = () => {
         // Create the payload with the correct plural 'imageUrls'
         const payload = {
             ...formData,
+            price: parseFloat(formData.price),
+            stockQuantity: formData.stockQuantity ? parseInt(formData.stockQuantity, 10) : 0,
             imageUrls: imagesArray
         };
 
@@ -384,6 +410,8 @@ const ProductManager = () => {
                                     <img
                                         src={product.imageUrls[0]} // Always show the first image
                                         alt={product.name}
+                                        loading="lazy"
+                                        decoding="async"
                                         className="w-full h-full object-cover"
                                     />
                                 ) : (
