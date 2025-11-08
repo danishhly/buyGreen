@@ -3,11 +3,13 @@ package com.buygreen.controller;
 
 import com.buygreen.model.Product;
 import com.buygreen.service.ProductService;
+import lombok.Getter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
 
@@ -42,6 +44,15 @@ public class productController {
     public ResponseEntity<?> deleteProduct(@PathVariable Long id) {
         return ResponseEntity.ok(service.deleteProduct(id));
     }
+
+    @GetMapping("/search")
+    public ResponseEntity<Page<Product>> searchProducts (
+        @RequestParam("query") String query,
+                Pageable pageable){
+            Page<Product> products = service.searchProducts(query, pageable);
+            return ResponseEntity.ok(products);
+        }
+
 
     @GetMapping("/{id}")
     public ResponseEntity<?> getProductById(@PathVariable Long id) {

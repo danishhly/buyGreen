@@ -12,5 +12,7 @@ import java.util.List;
         Product updateProduct(Long id, Product product);
         String deleteProduct(Long id);
         Product getProductById(Long id);
+
+        Page<Product> searchProducts(String query, Pageable pageable);
     }
 

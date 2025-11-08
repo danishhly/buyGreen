@@ -56,4 +56,9 @@ public class ProductServiceImpl  implements ProductService{
         return repo.findById(id).orElse(null);
     }
 
+    @Override
+    public Page<Product> searchProducts(String query, Pageable pageable){
+        return repo.searchByNameOrDescription(query, pageable);
+    }
+
 }
