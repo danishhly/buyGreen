@@ -67,7 +67,7 @@ const CustomerHome = () => {
     const [currentPage, setCurrentPage] = useState(0);
     const [totalPages, setTotalPages] = useState(0);
     const [totalProducts, setTotalProducts] = useState(0);
-    const PRODUCTS_PER_PAGE = 12;
+    const PRODUCTS_PER_PAGE = 9;
 
     useEffect(() => {
         const params = new URLSearchParams(location.search);
@@ -114,7 +114,7 @@ const CustomerHome = () => {
                 setTotalProducts(0);
             })
             .finally(() => setIsLoadingProducts(false));
-    }, [currentPage, searchTerm]);
+    }, [currentPage, searchTerm, selectedCategory]);
 
     useEffect(() => {
         const storedCustomer = localStorage.getItem('customer');
@@ -517,7 +517,7 @@ const CustomerHome = () => {
                         <LoadingSpinner />
                     ) : filteredProducts.length > 0 ? (
                         <>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mb-8">
                                 {filteredProducts.map((product) => (
                                     <Link
                                         to={`/product/${product.id}`}
@@ -706,7 +706,7 @@ const CustomerHome = () => {
                                         <div>
                                             <h4 className="font-semibold text-gray-900 mb-1">Email</h4>
                                             <a href="mailto:contact@buygreen.com" className="text-gray-600 hover:text-green-600 transition-colors">
-                                                contact@buygreen.com
+                                                dnsh.1inn@gmail.com
                                             </a>
                                         </div>
                                     </div>
@@ -720,7 +720,7 @@ const CustomerHome = () => {
                                         <div>
                                             <h4 className="font-semibold text-gray-900 mb-1">Phone</h4>
                                             <a href="tel:+1234567890" className="text-gray-600 hover:text-green-600 transition-colors">
-                                                +1 (234) 567-890
+                                                +91 7736721999
                                             </a>
                                         </div>
                                     </div>
@@ -735,9 +735,9 @@ const CustomerHome = () => {
                                         <div>
                                             <h4 className="font-semibold text-gray-900 mb-1">Address</h4>
                                             <p className="text-gray-600">
-                                                123 Green Street<br />
-                                                Eco City, EC 12345<br />
-                                                United States
+                                                Nomad street East<br />
+                                                Kannur, Kerala<br />
+                                                India
                                             </p>
                                         </div>
                                     </div>
