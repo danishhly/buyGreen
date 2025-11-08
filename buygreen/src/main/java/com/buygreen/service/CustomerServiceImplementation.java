@@ -8,6 +8,8 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -60,8 +62,8 @@ public class CustomerServiceImplementation implements CustomerService, UserDetai
     }
 
     @Override
-    public List<Customers> getAllCustomers() {
-        return repo.findAll();
+    public Page<Customers> getAllCustomers(Pageable pageable) {
+        return repo.findAll(pageable);
     }
 
     @Override

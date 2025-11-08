@@ -2,6 +2,8 @@ package com.buygreen.service;
 
 import com.buygreen.model.Customers;
 import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 public interface CustomerService {
     String addCustomer(Customers customer);
@@ -13,5 +15,5 @@ public interface CustomerService {
 
     String createPasswordResetToken(String email);
     boolean resetPassword(String token, String newPassword);
-    List<Customers> getAllCustomers(); //2. Add this method
+    Page<Customers> getAllCustomers(Pageable pageable);
 }

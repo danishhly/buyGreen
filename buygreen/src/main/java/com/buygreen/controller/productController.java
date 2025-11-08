@@ -5,6 +5,8 @@ import com.buygreen.model.Product;
 import com.buygreen.service.ProductService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -23,8 +25,9 @@ public class productController {
     }
 
     @GetMapping("/all")
-    public ResponseEntity<List<Product>> getAllProducts() {
-        return ResponseEntity.ok(service.getAllProducts());
+    public ResponseEntity<Page<Product>> getAllProducts(Pageable pageable) {
+        Page<Product> products = service.getAllProducts(pageable);
+        return ResponseEntity.ok(products);
     }
 
     @PutMapping("/update/{id}")

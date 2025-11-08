@@ -6,6 +6,8 @@ import com.buygreen.model.Order;
 import com.buygreen.model.OrderItem;
 import com.buygreen.repository.CartRepository;
 import com.buygreen.repository.OrderRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -58,9 +60,13 @@ public class OrderService {
         return orderRepository.findByCustomerId(customerId);
     }
 
-    public List<Order> getAllOrders() {
+    public Page<Order> getAllOrders(Pageable pageable) {
         //this will find all orders and sort them by date, newest first.
-        return orderRepository.findAllByOrderByOrderDateDesc();
+        return orderRepository.findAllByOrderByOrderDateDesc(pageable);
+    }
+
+    public boolean hasCustomerPurchasedProduct(Long customerId, Long productId) {
+        return orderRepository.hasCustomerPurchasedProduct(customerId, productId);
     }
 
 

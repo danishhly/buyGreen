@@ -36,6 +36,11 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/products/all").permitAll()
                         .requestMatchers(HttpMethod.GET, "/products/{id}").permitAll()
 
+                        //Add review files
+                        .requestMatchers(HttpMethod.GET, "/products/{productId}/reviews").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/products/{productId}/reviews/check").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/products/{productId}/reviews").permitAll()
+
                         // Admin-only endpoints
                         .requestMatchers("/products/add").hasRole("ADMIN")
                         .requestMatchers("/products/update/**").hasRole("ADMIN")
