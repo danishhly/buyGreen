@@ -14,6 +14,31 @@ const LoadingSpinner = () => (
     </div>
 );
 
+// pagination control
+
+const Pagination = ({currentPage, totalPages, onPageChange }) => {
+    return (
+        <div className="flex justify-center items-center gap-4 mt-12">
+            <button
+            onClick={() => onPageChange(currentPage - 1)}
+            disabled={currentPage === 0}
+            className="px-4 py-2 bg-gray-900 text-white font-semibold rounded-lg hover:bg-gray-800 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+            >
+                &larr; previous
+            </button>
+            <span className="text-gray-700 font-medium">
+                Page {currentPage + 1} of {totalPages}
+            </span>
+            <button onClick={() => onPageChange(currentPage + 1)}
+            disabled={currentPage + 1 >= totalPages}
+            className="px-4 py-2 bg-gray-900 text-white font-semibold rounded-lg hover:bg-gray-800 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+            >
+                Next &rarr; 
+        </button>
+        </div>
+    )
+}
+
 const CustomerHome = () => {
     const [allProducts, setAllProducts] = useState([]);
     const [filteredProducts, setFilteredProducts] = useState([]);
@@ -26,6 +51,11 @@ const CustomerHome = () => {
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedCategory, setSelectedCategory] = useState("");
 
+    const [currentPage, setCurrentPage] = useState(0);
+    const [totalPages, setTotalPages] = useState(0);
+    const [totalProducts, setTotalProducts] = useState(0);
+    const PRODUCTS_PER_PAGE = 10;
+
     useEffect(() => {
         const params = new URLSearchParams(location.search);
         const searchParam = params.get('search');
@@ -34,12 +64,17 @@ const CustomerHome = () => {
         setSelectedCategory(categoryParam || "");
     }, [location]);
 
+
     useEffect(() => {
-        api.get("/products/all")
+        setIsLoadingProducts(true);
+        api.get(`/products/all?page=${currentPage}&size=${PRODUCTS_PER_PAGE}`)
             .then((res) => {
-                const products = Array.isArray(res.data) ? res.data : [];
+                const products = Array.isArray(res.data.content) ? res.data.content : [];
                 setAllProducts(products);
                 setFilteredProducts(products);
+
+                setTotalPages(res.data.totalPages);
+                setTotalProducts(res.data.totalElements);
             })
             .catch((err) => {
                 console.error("Error fetching products:", err);
@@ -47,7 +82,7 @@ const CustomerHome = () => {
                 setFilteredProducts([]);
             })
             .finally(() => setIsLoadingProducts(false));
-    }, []);
+    }, [currentPage]);
 
     useEffect(() => {
         const storedCustomer = localStorage.getItem('customer');
@@ -97,6 +132,11 @@ const CustomerHome = () => {
         }
     };
 
+    const handlePageChange = (newPage) => {
+        setCurrentPage(newPage);
+        window.scrollTo(0, 0); 
+    };
+
     return (
         <div className="min-h-screen bg-gray-50">
             <div className="bg-gradient-to-r from-green-600 to-emerald-600 text-white">
@@ -144,9 +184,12 @@ const CustomerHome = () => {
                             >
                                 <div className="relative overflow-hidden bg-gradient-to-br from-green-50 to-emerald-50 aspect-square">
                                     <img
-                                        src={product.imageUrl || 'https://via.placeholder.com/400x400?text=No+Image'}
+                                        src={product.imageUrl || (product.imageUrls && product.imageUrls.length > 0 ? product.imageUrls[0] : 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgZmlsbD0iI2YzZjRmNiIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMjAiIGZpbGw9IiM5Y2EzYWYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5ObyBJbWFnZTwvdGV4dD48L3N2Zz4=')}
                                         alt={product.name}
                                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                                        onError={(e) => {
+                                            e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgZmlsbD0iI2YzZjRmNiIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMjAiIGZpbGw9IiM5Y2EzYWYiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5ObyBJbWFnZTwvdGV4dD48L3N2Zz4=';
+                                        }}
                                     />
                                     {product.stockQuantity <= 0 && (
                                         <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center">
@@ -223,7 +266,15 @@ const CustomerHome = () => {
                             </button>
                         )}
                     </div>
+                    
                 )}
+                  {totalPages > 1 && (
+                        <Pagination
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        onPageChange={handlePageChange}
+                        />
+                    )}
             </main>
         </div>
     );

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useCart } from '../Hooks/UseCart';
+import Logo from './Logo';
 
 const Navbar = () => {
     const { cartCount, wishlistCount } = useCart();
@@ -86,12 +87,9 @@ const Navbar = () => {
                         <div className="flex-shrink-0 group">
                             <Link 
                                 to="/CustomerHome" 
-                                className="flex items-center gap-2 text-3xl font-bold text-gray-900 hover:text-green-600 transition-all duration-300"
+                                className="flex items-center gap-2 hover:opacity-80 transition-all duration-300"
                             >
-                                <span className="relative">
-                                    BuyGreen
-                                    <span className="ml-0.5 w-1.5 h-1.5 bg-green-600 rounded-full inline-block animate-bounce-subtle"></span>
-                                </span>
+                                <Logo className="h-12 w-auto" />
                             </Link>
                         </div>
 

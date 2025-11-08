@@ -8,7 +8,31 @@ const LoadingSpinner = () => (
     </div>
 );
 
-// --- 1. Product Management Component (This is your new, polished code) ---
+const PaginationControls = ({ currentPage, totalPages, onPageChange }) => {
+    return (
+        <div className="flex justify-between items-center mt-6">
+            <button
+                onClick={() => onPageChange(currentPage - 1)}
+                disabled={currentPage === 0}
+                className="px-4 py-2 bg-gray-700 text-white font-semibold rounded-lg hover:bg-gray-800 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+            >
+                &larr; Previous
+            </button>
+            <span className="text-gray-700 font-medium">
+                Page {currentPage + 1} of {totalPages}
+            </span>
+            <button
+                onClick={() => onPageChange(currentPage + 1)}
+                disabled={currentPage + 1 >= totalPages}
+                className="px-4 py-2 bg-gray-700 text-white font-semibold rounded-lg hover:bg-gray-800 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+            >
+                Next &rarr;
+            </button>
+        </div>
+    );
+};
+
+
 const ProductManager = () => {
     const [products, setProducts] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -22,16 +46,28 @@ const ProductManager = () => {
     });
 
     const [editingId, setEditingId] = useState(null);
+    const [currentPage, setCurrentPage] = useState(0);
+    const [totalPages, setTotalPages] = useState(0);
+    const [searchQuery, setSearchQuery] = useState("");
 
     useEffect(() => {
         fetchProducts();
     }, []);
 
-    const fetchProducts = async () => {
+    const fetchProducts = async (page = 0, query = "") => {
         try {
             setIsLoading(true);
-            const response = await api.get("/products/all");
-            setProducts(response.data);
+            let response;
+            if (query && query.trim() !== "") {
+                // Use search endpoint when there's a query
+                response = await api.get(`/products/search?query=${encodeURIComponent(query)}&page=${page}&size=6`);
+            } else {
+                // Use regular endpoint when no query
+                response = await api.get(`/products/all?page=${page}&size=6`);
+            }
+            setProducts(response.data.content);
+            setCurrentPage(response.data.number);
+            setTotalPages(response.data.totalPages);
         } catch (err) {
             console.error("Error fetching products:", err);
             alert("Failed to load products.");
@@ -39,6 +75,26 @@ const ProductManager = () => {
             setIsLoading(false);
         }
     };
+
+    useEffect(() => {
+        fetchProducts(currentPage, searchQuery);
+    }, [currentPage]);
+
+    const handleSearch = (e) => {
+        e.preventDefault();
+        setCurrentPage(0); // Reset to first page when searching
+        fetchProducts(0, searchQuery);
+    };
+
+    const handleClearSearch = () => {
+        setSearchQuery("");
+        setCurrentPage(0);
+        fetchProducts(0, "");
+    };
+
+    const handlePageChange = (newPage) => {
+        setCurrentPage(newPage);
+    }
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -55,7 +111,7 @@ const ProductManager = () => {
         const imagesArray = formData.imageUrls.split(',')
             .map(url => url.trim())
             .filter(url => url.length > 0);
-        
+
         // Create the payload with the correct plural 'imageUrls'
         const payload = {
             ...formData,
@@ -75,7 +131,7 @@ const ProductManager = () => {
 
             setEditingId(null);
             setFormData({ name: "", description: "", price: "", imageUrls: "", category: "", stockQuantity: "" });
-            fetchProducts();
+            fetchProducts(currentPage, searchQuery);
         } catch (err) {
             console.error("Error saving product:", err);
             alert(err.response?.data?.message || "Failed to save product. Please try again.");
@@ -108,7 +164,7 @@ const ProductManager = () => {
         try {
             await api.delete(`/products/delete/${id}`);
             alert("Product deleted successfully!");
-            fetchProducts();
+            fetchProducts(currentPage, searchQuery);
         } catch (err) {
             console.error("Error deleting product:", err);
             alert("Failed to delete product. Please try again.");
@@ -116,7 +172,7 @@ const ProductManager = () => {
     };
 
     return (
-        <div> {/* This wrapper div is important for the tab content */}
+        <div>
             {/* Add/Edit Product Form */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 mb-8">
                 <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
@@ -250,13 +306,68 @@ const ProductManager = () => {
 
             {/* Products List */}
             <div className="mb-6">
-                <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-700">
-                        <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
-                        <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
-                    </svg>
-                    Products ({products.length})
-                </h2>
+                <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-700">
+                            <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+                            <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+                        </svg>
+                        Products ({products.length})
+                    </h2>
+                </div>
+
+                {/* Search Bar */}
+                <div className="mb-6">
+                    <form onSubmit={handleSearch} className="flex gap-2">
+                        <div className="flex-1 relative">
+                            <input
+                                type="text"
+                                placeholder="Search products by name or description..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="w-full px-4 py-3 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none transition-all"
+                            />
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="20"
+                                height="20"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                            >
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <path d="m21 21-4.35-4.35"></path>
+                            </svg>
+                        </div>
+                        <button
+                            type="submit"
+                            className="px-6 py-3 bg-green-700 text-white font-semibold rounded-lg hover:bg-green-800 transition-colors flex items-center gap-2"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <path d="m21 21-4.35-4.35"></path>
+                            </svg>
+                            Search
+                        </button>
+                        {searchQuery && (
+                            <button
+                                type="button"
+                                onClick={handleClearSearch}
+                                className="px-6 py-3 bg-gray-500 text-white font-semibold rounded-lg hover:bg-gray-600 transition-colors flex items-center gap-2"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
+                                Clear
+                            </button>
+                        )}
+                    </form>
+                </div>
             </div>
 
             {isLoading ? (
@@ -344,30 +455,48 @@ const ProductManager = () => {
                     <p className="text-gray-500">Add your first product using the form above.</p>
                 </div>
             )}
+            {totalPages > 1 && (
+                <PaginationControls
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={handlePageChange}
+                />
+            )}
         </div>
     );
 };
 
-// --- 2. New Component for Viewing Orders (From previous step) ---
+//  2. Component for Viewing Orders 
 const OrderList = () => {
     const [orders, setOrders] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
 
+    const [currentPage, setCurrentPage] = useState(0);
+    const [totalPages, setTotalPages] = useState(0);
+
+    const fetchOrders = async (page = 0) => {
+        setIsLoading(true);
+        try {
+            const response = await api.get(`/admin/orders?page=${page}&size=10`);
+            setOrders(response.data.content);
+            setCurrentPage(response.data.number);
+            setTotalPages(response.data.totalPages);
+        } catch (err) {
+            console.error("Error fetching orders:", err);
+            alert("Could not fetch orders. Make sure you are an admin.");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     useEffect(() => {
-        const fetchOrders = async () => {
-            setIsLoading(true);
-            try {
-                const response = await api.get("/admin/orders");
-                setOrders(response.data);
-            } catch (err) {
-                console.error("Error fetching orders:", err);
-                alert("Could not fetch orders. Make sure you are an admin.");
-            } finally {
-                setIsLoading(false);
-            }
-        };
-        fetchOrders();
-    }, []);
+        fetchOrders(currentPage);
+    }, [currentPage]);
+
+    const handlePageChange = (newPage) => {
+        setCurrentPage(newPage);
+    };
+
 
     if (isLoading) return <LoadingSpinner />;
 
@@ -404,6 +533,15 @@ const OrderList = () => {
                             </div>
                         </div>
                     ))}
+                    {totalPages > 1 && (
+                        <div className="p-6 border-t">
+                            <PaginationControls
+                                currentPage={currentPage}
+                                totalPages={totalPages}
+                                onPageChange={handlePageChange}
+                            />
+                        </div>
+                    )}
                 </div>
             )}
         </div>
@@ -415,21 +553,31 @@ const CustomerList = () => {
     const [customers, setCustomers] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
 
+    const [currentPage, setCurrentPage] = useState(0);
+    const [totalPages, setTotalPages] = useState(0);
+
+    const fetchCustomers = async (page = 0) => {
+        setIsLoading(true);
+        try {
+            const response = await api.get(`/admin/customers?page=${page}&size=10`);
+            setCustomers(response.data.content);
+            setCurrentPage(response.data.number);
+            setTotalPages(response.data.totalPages);
+        } catch (err) {
+            console.error("Error fetching customers:", err);
+            alert("Could not fetch customers. Make sure you are an admin.");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     useEffect(() => {
-        const fetchCustomers = async () => {
-            setIsLoading(true);
-            try {
-                const response = await api.get("/admin/customers");
-                setCustomers(response.data);
-            } catch (err) {
-                console.error("Error fetching customers:", err);
-                alert("Could not fetch customers. Make sure you are an admin.");
-            } finally {
-                setIsLoading(false);
-            }
-        };
-        fetchCustomers();
-    }, []);
+        fetchCustomers(currentPage);
+    }, [currentPage]);
+
+    const handlePageChange = (newPage) => {
+        setCurrentPage(newPage);
+    };
 
     if (isLoading) return <LoadingSpinner />;
 
@@ -462,9 +610,8 @@ const CustomerList = () => {
                                     <td className="p-4 text-gray-800">{customer.name}</td>
                                     <td className="p-4 text-gray-800">{customer.email}</td>
                                     <td className="p-4 text-gray-800 capitalize">
-                                        <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                                            customer.role === 'admin' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                                        }`}>
+                                        <span className={`px-2 py-1 text-xs font-semibold rounded-full ${customer.role === 'admin' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                                            }`}>
                                             {customer.role}
                                         </span>
                                     </td>
@@ -474,6 +621,16 @@ const CustomerList = () => {
                     </table>
                 </div>
             )}
+            {totalPages > 1 && (
+                <div className="p-6 border-t">
+                    <PaginationControls
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        onPageChange={handlePageChange}
+                    />
+                </div>
+            )}
+
         </div>
     );
 };
@@ -506,7 +663,7 @@ function AdminDashboard() {
     return (
         <div className="p-8 bg-gray-50 min-h-screen">
             <h1 className="text-3xl font-bold text-gray-900 mb-6">Admin Dashboard</h1>
-            
+
             {/* Tab Navigation */}
             <div className="mb-6">
                 <div className="border-b border-gray-200">

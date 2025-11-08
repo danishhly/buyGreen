@@ -120,23 +120,32 @@ export const CartProvider = ({ children }) => {
 
     const addToWishlist = async (productId) => {
         if (!getCustomer()) throw new Error("User is not logged in.");
+        if (!productId || productId === null || productId === undefined) {
+            throw new Error("Product ID is required");
+        }
         try {
-            await api.post('/wishlist/add', { productId });
+            const response = await api.post('/wishlist/add', { productId: Number(productId) });
             await fetchWishlist(); // Refresh wishlist
+            return response.data;
         } catch (err) {
             console.error("Error adding to wishlist:", err);
-            throw err;
+            const errorMessage = err.response?.data?.message || err.message || "Failed to add to wishlist";
+            throw new Error(errorMessage);
         }
     };
 
     const removeFromWishlist = async (productId) => {
         if (!getCustomer()) throw new Error("User is not logged in.");
+        if (!productId || productId === null || productId === undefined) {
+            throw new Error("Product ID is required");
+        }
         try {
-            await api.post('/wishlist/remove', { productId });
+            await api.post('/wishlist/remove', { productId: Number(productId) });
             await fetchWishlist(); // Refresh wishlist
         } catch (err) {
             console.error("Error removing from wishlist:", err);
-            throw err;
+            const errorMessage = err.response?.data?.message || err.message || "Failed to remove from wishlist";
+            throw new Error(errorMessage);
         }
     };
 

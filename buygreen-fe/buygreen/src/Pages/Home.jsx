@@ -1,11 +1,15 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
+import Logo from '../Component/Logo';
 
 function Home() {
   return (
     <div className="w-full flex items-center justify-center min-h-screen bg-green-100">
       <div className="w-full max-w-md bg-white p-10 rounded-xl shadow-lg text-center">
-        <h1 className="text-3xl font-bold text-green-700 mb-6">Welcome to <span className="text-green-500">buyGreen</span></h1>
+        <div className="flex justify-center mb-6">
+          <Logo className="h-16 w-auto" />
+        </div>
+        <h1 className="text-3xl font-bold text-green-700 mb-6">Welcome to buyGreen</h1>
 
         <div className="space-y-4">
           <NavLink

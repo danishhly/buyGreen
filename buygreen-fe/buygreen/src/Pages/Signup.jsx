@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import api from '../api/axiosConfig';
 import { GoogleLogin } from '@react-oauth/google';
 import { useNavigate, Link } from 'react-router-dom';
+import Logo from '../Component/Logo';
 
 function Signup() {
     const [formData, setFormData] = useState({
@@ -116,13 +117,8 @@ function Signup() {
                 <div className="w-full max-w-md">
                     {/* Logo */}
                     <div className="mb-12">
-                        <Link to="/" className="flex items-center space-x-2 mb-8">
-                            <div className="w-10 h-10 bg-green-600 rounded-lg flex items-center justify-center">
-                                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                                </svg>
-                            </div>
-                            <span className="text-2xl font-bold text-gray-900">BuyGreen</span>
+                        <Link to="/" className="flex items-center mb-8">
+                            <Logo className="h-10 w-auto" />
                         </Link>
                         
                         <h2 className="text-4xl font-serif font-bold text-gray-900 mb-3">Create Account</h2>
