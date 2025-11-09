@@ -209,6 +209,12 @@ export const CartProvider = ({ children }) => {
             });
             
             console.log("Order placed successfully:", response.data);
+            console.log("Order ID:", response.data?.id);
+
+            // Verify order was created successfully
+            if (!response.data || (!response.data.id && response.status !== 201)) {
+                throw new Error("Order creation failed - invalid response from server");
+            }
 
             // Only clear cart if we used cart items (not provided items)
             // Don't fail the order if cart clearing fails
@@ -220,14 +226,21 @@ export const CartProvider = ({ children }) => {
                     // Don't throw - order was successful, cart clearing is not critical
                 }
             }
+            
+            // Return the order object
             return response.data;
         } catch (err) {
             console.error("Order placement error:", err);
+            console.error("Error response:", err.response?.data);
+            console.error("Error status:", err.response?.status);
+            
             // Check if it's actually a permission error or something else
             if (err.response?.status === 403) {
                 const errorMessage = err.response?.data?.message || "You do not have permission to place orders. Please contact support.";
                 throw new Error(errorMessage);
             }
+            
+            // For other errors, provide more context
             const errorMessage = err.response?.data?.message || err.message || "Failed to place order";
             throw new Error(errorMessage);
         }

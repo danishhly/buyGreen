@@ -165,7 +165,7 @@ function Login() {
 
           <div className="flex-1 flex flex-col justify-center">
             <h1 className="text-5xl md:text-6xl font-serif font-bold mb-6 leading-tight">
-              Go Green,<br />Live Better
+              Choose <span className="text-[#033817]">Green,</span><br />Live Better
             </h1>
             <p className="text-lg text-green-50 leading-relaxed max-w-md">
               Every small step towards sustainability makes a difference. Choose eco-friendly products and be part of the change our planet needs.

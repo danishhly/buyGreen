@@ -91,6 +91,9 @@ const PaymentPage = () => {
     };
 
     const handlePaymentSuccess = async () => {
+        let orderCreated = false;
+        let orderId = null;
+        
         try {
             // Wait a moment to show success message
             await new Promise(resolve => setTimeout(resolve, 1500));
@@ -106,31 +109,46 @@ const PaymentPage = () => {
             );
             
             // Check if order was actually created (has an ID)
-            if (order && order.id) {
+            if (order && (order.id || order.orderId)) {
+                orderId = order.id || order.orderId;
+                orderCreated = true;
+                console.log('Order placed successfully with ID:', orderId);
+                
+                // Show success message
                 success('Payment successful! Order placed.');
                 
-                // Navigate to order success page
+                // Navigate to order success page after a short delay
                 setTimeout(() => {
                     navigate('/order-success', { state: { order } });
                 }, 1000);
+                return; // Exit early if order was successful
             } else {
-                throw new Error('Order was not created properly');
+                // Log the order object to debug
+                console.error('Order response structure:', order);
+                throw new Error('Order was created but response format is unexpected');
             }
         } catch (err) {
             console.error('Failed to place order:', err);
             const errorMessage = err.message || 'Unknown error occurred';
             
-            // Check if it's a permission error specifically
-            if (errorMessage.includes('permission') || errorMessage.includes('403')) {
-                error('Payment successful but you do not have permission to place orders. Please contact support with your payment details.');
+            // Only show error if order was NOT created
+            // If order was created but something else failed, don't show error
+            if (!orderCreated) {
+                if (errorMessage.includes('permission') || errorMessage.includes('403')) {
+                    error('Payment successful but you do not have permission to place orders. Please contact support with your payment details.');
+                } else {
+                    error(`Payment successful but failed to place order: ${errorMessage}. Please contact support.`);
+                }
+                
+                // Navigate to cart so user can try again
+                setTimeout(() => {
+                    navigate('/cart');
+                }, 3000);
             } else {
-                error(`Payment successful but failed to place order: ${errorMessage}. Please contact support.`);
+                // Order was created successfully, but something else failed
+                // Don't show error, just log it
+                console.warn('Order created successfully but post-order operation failed:', err);
             }
-            
-            // Still navigate to cart so user can try again
-            setTimeout(() => {
-                navigate('/cart');
-            }, 3000);
         }
     };
 
