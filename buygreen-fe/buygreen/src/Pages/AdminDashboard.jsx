@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import api from "../api/axiosConfig";
 import { useToast } from "../Component/Toast";
 import { validateRequired, validatePrice, validateStock, validateImageUrls } from "../utils/validation";
@@ -1165,9 +1166,471 @@ const CouponManager = () => {
     );
 };
 
+// --- 3.6. Sales Analytics Component ---
+const SalesAnalytics = () => {
+    const { error } = useToast();
+    const [analytics, setAnalytics] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        fetchAnalytics();
+    }, []);
+
+    const fetchAnalytics = async () => {
+        setIsLoading(true);
+        try {
+            const response = await api.get('/admin/analytics/sales');
+            setAnalytics(response.data);
+        } catch (err) {
+            console.error("Error fetching sales analytics:", err);
+            error("Failed to load sales analytics.");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    if (isLoading) return <LoadingSpinner />;
+    if (!analytics) return <p className="p-6 text-gray-500">No analytics data available.</p>;
+
+    const ordersByDate = analytics.ordersByDate || {};
+    const revenueByDate = analytics.revenueByDate || {};
+    const dates = Object.keys(ordersByDate).sort();
+
+    return (
+        <div className="space-y-6">
+            {/* Key Metrics Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-lg p-6 text-white">
+                    <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-sm font-semibold opacity-90">Total Revenue</h3>
+                        <svg className="w-8 h-8 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <p className="text-3xl font-bold">₹{Number(analytics.totalRevenue || 0).toFixed(2)}</p>
+                    <p className="text-sm opacity-80 mt-2">All time revenue</p>
+                </div>
+
+                <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg p-6 text-white">
+                    <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-sm font-semibold opacity-90">Total Orders</h3>
+                        <svg className="w-8 h-8 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                        </svg>
+                    </div>
+                    <p className="text-3xl font-bold">{analytics.totalOrders || 0}</p>
+                    <p className="text-sm opacity-80 mt-2">Orders placed</p>
+                </div>
+
+                <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl shadow-lg p-6 text-white">
+                    <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-sm font-semibold opacity-90">Avg Order Value</h3>
+                        <svg className="w-8 h-8 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                        </svg>
+                    </div>
+                    <p className="text-3xl font-bold">₹{Number(analytics.averageOrderValue || 0).toFixed(2)}</p>
+                    <p className="text-sm opacity-80 mt-2">Per order average</p>
+                </div>
+
+                <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl shadow-lg p-6 text-white">
+                    <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-sm font-semibold opacity-90">Items Sold</h3>
+                        <svg className="w-8 h-8 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                        </svg>
+                    </div>
+                    <p className="text-3xl font-bold">{analytics.totalItemsSold || 0}</p>
+                    <p className="text-sm opacity-80 mt-2">Total units sold</p>
+                </div>
+            </div>
+
+            {/* Charts Section */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Orders by Status */}
+                <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
+                    <h3 className="text-xl font-bold text-gray-900 mb-4">Orders by Status</h3>
+                    <div className="space-y-3">
+                        {analytics.ordersByStatus && Object.entries(analytics.ordersByStatus).map(([status, count]) => (
+                            <div key={status} className="flex items-center justify-between">
+                                <span className="text-gray-700 capitalize">{status.toLowerCase()}</span>
+                                <div className="flex items-center gap-3">
+                                    <div className="w-32 bg-gray-200 rounded-full h-2">
+                                        <div
+                                            className="bg-green-600 h-2 rounded-full"
+                                            style={{ width: `${(count / (analytics.totalOrders || 1)) * 100}%` }}
+                                        ></div>
+                                    </div>
+                                    <span className="text-gray-900 font-semibold w-12 text-right">{count}</span>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Revenue by Status */}
+                <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
+                    <h3 className="text-xl font-bold text-gray-900 mb-4">Revenue by Status</h3>
+                    <div className="space-y-3">
+                        {analytics.revenueByStatus && Object.entries(analytics.revenueByStatus).map(([status, revenue]) => (
+                            <div key={status} className="flex items-center justify-between">
+                                <span className="text-gray-700 capitalize">{status.toLowerCase()}</span>
+                                <span className="text-green-700 font-bold">₹{Number(revenue).toFixed(2)}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+
+            {/* 30-Day Trends */}
+            <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
+                <h3 className="text-xl font-bold text-gray-900 mb-6">Last 30 Days Trends</h3>
+                <div className="space-y-4">
+                    {dates.length > 0 ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <h4 className="text-sm font-semibold text-gray-600 mb-3">Orders per Day</h4>
+                                <div className="space-y-2 max-h-64 overflow-y-auto">
+                                    {dates.map(date => (
+                                        <div key={date} className="flex items-center justify-between text-sm">
+                                            <span className="text-gray-600">{new Date(date).toLocaleDateString()}</span>
+                                            <span className="font-semibold">{ordersByDate[date] || 0}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                            <div>
+                                <h4 className="text-sm font-semibold text-gray-600 mb-3">Revenue per Day</h4>
+                                <div className="space-y-2 max-h-64 overflow-y-auto">
+                                    {dates.map(date => (
+                                        <div key={date} className="flex items-center justify-between text-sm">
+                                            <span className="text-gray-600">{new Date(date).toLocaleDateString()}</span>
+                                            <span className="font-semibold text-green-700">₹{Number(revenueByDate[date] || 0).toFixed(2)}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    ) : (
+                        <p className="text-gray-500 text-center py-8">No data available for the last 30 days</p>
+                    )}
+                </div>
+            </div>
+
+            {/* Discounts Summary */}
+            {analytics.totalDiscounts && Number(analytics.totalDiscounts) > 0 && (
+                <div className="bg-gradient-to-r from-yellow-50 to-orange-50 rounded-xl shadow-lg border border-yellow-200 p-6">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <h3 className="text-lg font-bold text-gray-900 mb-1">Total Discounts Given</h3>
+                            <p className="text-sm text-gray-600">Total amount saved by customers through coupons</p>
+                        </div>
+                        <div className="text-right">
+                            <p className="text-3xl font-bold text-orange-700">₹{Number(analytics.totalDiscounts).toFixed(2)}</p>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
+
+// --- 3.7. Customer Analytics Component ---
+const CustomerAnalytics = () => {
+    const { error } = useToast();
+    const [analytics, setAnalytics] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        fetchAnalytics();
+    }, []);
+
+    const fetchAnalytics = async () => {
+        setIsLoading(true);
+        try {
+            const response = await api.get('/admin/analytics/customers');
+            setAnalytics(response.data);
+        } catch (err) {
+            console.error("Error fetching customer analytics:", err);
+            error("Failed to load customer analytics.");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    if (isLoading) return <LoadingSpinner />;
+    if (!analytics) return <p className="p-6 text-gray-500">No analytics data available.</p>;
+
+    return (
+        <div className="space-y-6">
+            {/* Key Metrics */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
+                    <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-sm font-semibold text-gray-600">Total Customers</h3>
+                        <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
+                    </div>
+                    <p className="text-3xl font-bold text-gray-900">{analytics.totalCustomers || 0}</p>
+                </div>
+
+                <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
+                    <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-sm font-semibold text-gray-600">Active Customers</h3>
+                        <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <p className="text-3xl font-bold text-gray-900">{analytics.activeCustomers || 0}</p>
+                    <p className="text-sm text-gray-500 mt-1">With at least one order</p>
+                </div>
+
+                <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
+                    <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-sm font-semibold text-gray-600">New Customers</h3>
+                        <svg className="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                        </svg>
+                    </div>
+                    <p className="text-3xl font-bold text-gray-900">{analytics.newCustomersLast30Days || 0}</p>
+                    <p className="text-sm text-gray-500 mt-1">Last 30 days</p>
+                </div>
+
+                <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
+                    <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-sm font-semibold text-gray-600">Avg Order Value</h3>
+                        <svg className="w-8 h-8 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <p className="text-3xl font-bold text-gray-900">₹{Number(analytics.averageOrderValuePerCustomer || 0).toFixed(2)}</p>
+                    <p className="text-sm text-gray-500 mt-1">Per active customer</p>
+                </div>
+            </div>
+
+            {/* Summary Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
+                    <h3 className="text-lg font-bold text-gray-900 mb-4">Customer Activity</h3>
+                    <div className="space-y-4">
+                        <div className="flex justify-between items-center">
+                            <span className="text-gray-600">Total Orders</span>
+                            <span className="text-xl font-bold text-gray-900">{analytics.totalOrders || 0}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                            <span className="text-gray-600">Total Revenue</span>
+                            <span className="text-xl font-bold text-green-700">₹{Number(analytics.totalRevenue || 0).toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between items-center pt-4 border-t">
+                            <span className="text-gray-600">Active Rate</span>
+                            <span className="text-xl font-bold text-blue-700">
+                                {analytics.totalCustomers > 0
+                                    ? ((analytics.activeCustomers / analytics.totalCustomers) * 100).toFixed(1)
+                                    : 0}%
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="bg-gradient-to-br from-green-50 to-blue-50 rounded-xl shadow-lg border border-green-200 p-6">
+                    <h3 className="text-lg font-bold text-gray-900 mb-4">Customer Insights</h3>
+                    <div className="space-y-3">
+                        <div className="flex items-center gap-3">
+                            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                            <span className="text-gray-700">
+                                <strong>{analytics.activeCustomers || 0}</strong> customers have made purchases
+                            </span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                            <span className="text-gray-700">
+                                <strong>{analytics.totalCustomers - (analytics.activeCustomers || 0)}</strong> customers are yet to make their first purchase
+                            </span>
+                        </div>
+                        {analytics.newCustomersLast30Days > 0 && (
+                            <div className="flex items-center gap-3">
+                                <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                                <span className="text-gray-700">
+                                    <strong>{analytics.newCustomersLast30Days}</strong> new customers joined in the last 30 days
+                                </span>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+// --- 3.8. Inventory Alerts Component ---
+const InventoryAlerts = () => {
+    const { error } = useToast();
+    const [alerts, setAlerts] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        fetchAlerts();
+    }, []);
+
+    const fetchAlerts = async () => {
+        setIsLoading(true);
+        try {
+            const response = await api.get('/admin/analytics/inventory');
+            setAlerts(response.data);
+        } catch (err) {
+            console.error("Error fetching inventory alerts:", err);
+            error("Failed to load inventory alerts.");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    if (isLoading) return <LoadingSpinner />;
+    if (!alerts) return <p className="p-6 text-gray-500">No inventory data available.</p>;
+
+    return (
+        <div className="space-y-6">
+            {/* Alert Summary Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className={`rounded-xl shadow-lg p-6 border-2 ${alerts.totalOutOfStockCount > 0
+                    ? 'bg-red-50 border-red-300'
+                    : 'bg-green-50 border-green-300'
+                    }`}>
+                    <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-bold text-gray-900">Out of Stock</h3>
+                        <svg className={`w-8 h-8 ${alerts.totalOutOfStockCount > 0 ? 'text-red-600' : 'text-green-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                    </div>
+                    <p className="text-4xl font-bold mb-2">{alerts.totalOutOfStockCount || 0}</p>
+                    <p className="text-sm text-gray-600">Products need restocking</p>
+                </div>
+
+                <div className={`rounded-xl shadow-lg p-6 border-2 ${alerts.totalLowStockCount > 0
+                    ? 'bg-yellow-50 border-yellow-300'
+                    : 'bg-green-50 border-green-300'
+                    }`}>
+                    <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-bold text-gray-900">Low Stock</h3>
+                        <svg className={`w-8 h-8 ${alerts.totalLowStockCount > 0 ? 'text-yellow-600' : 'text-green-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                    </div>
+                    <p className="text-4xl font-bold mb-2">{alerts.totalLowStockCount || 0}</p>
+                    <p className="text-sm text-gray-600">Products running low (≤10 units)</p>
+                </div>
+            </div>
+
+            {/* Out of Stock Products */}
+            {alerts.outOfStockProducts && alerts.outOfStockProducts.length > 0 && (
+                <div className="bg-white rounded-xl shadow-lg border-2 border-red-200 overflow-hidden">
+                    <div className="bg-red-50 px-6 py-4 border-b border-red-200">
+                        <h3 className="text-xl font-bold text-red-900 flex items-center gap-2">
+                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                            Out of Stock Products ({alerts.outOfStockProducts.length})
+                        </h3>
+                    </div>
+                    <div className="overflow-x-auto">
+                        <table className="w-full">
+                            <thead>
+                                <tr className="border-b-2 border-gray-200 bg-gray-50">
+                                    <th className="text-left p-4 font-bold text-gray-700">Product Name</th>
+                                    <th className="text-left p-4 font-bold text-gray-700">Category</th>
+                                    <th className="text-left p-4 font-bold text-gray-700">Stock</th>
+                                    <th className="text-left p-4 font-bold text-gray-700">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {alerts.outOfStockProducts.map(product => (
+                                    <tr key={product.id} className="border-b border-gray-100 hover:bg-red-50 transition-colors">
+                                        <td className="p-4 font-semibold text-gray-900">{product.name}</td>
+                                        <td className="p-4 text-gray-600">{product.category || 'N/A'}</td>
+                                        <td className="p-4">
+                                            <span className="px-3 py-1 bg-red-100 text-red-800 rounded-full text-sm font-bold">0</span>
+                                        </td>
+                                        <td className="p-4">
+                                            <Link
+                                                to={`/AdminDashboard?tab=products&edit=${product.id}`}
+                                                className="text-blue-600 hover:text-blue-800 font-semibold text-sm"
+                                            >
+                                                Update Stock →
+                                            </Link>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            )}
+
+            {/* Low Stock Products */}
+            {alerts.lowStockProducts && alerts.lowStockProducts.length > 0 && (
+                <div className="bg-white rounded-xl shadow-lg border-2 border-yellow-200 overflow-hidden">
+                    <div className="bg-yellow-50 px-6 py-4 border-b border-yellow-200">
+                        <h3 className="text-xl font-bold text-yellow-900 flex items-center gap-2">
+                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                            Low Stock Products ({alerts.lowStockProducts.length})
+                        </h3>
+                    </div>
+                    <div className="overflow-x-auto">
+                        <table className="w-full">
+                            <thead>
+                                <tr className="border-b-2 border-gray-200 bg-gray-50">
+                                    <th className="text-left p-4 font-bold text-gray-700">Product Name</th>
+                                    <th className="text-left p-4 font-bold text-gray-700">Category</th>
+                                    <th className="text-left p-4 font-bold text-gray-700">Stock</th>
+                                    <th className="text-left p-4 font-bold text-gray-700">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {alerts.lowStockProducts.map(product => (
+                                    <tr key={product.id} className="border-b border-gray-100 hover:bg-yellow-50 transition-colors">
+                                        <td className="p-4 font-semibold text-gray-900">{product.name}</td>
+                                        <td className="p-4 text-gray-600">{product.category || 'N/A'}</td>
+                                        <td className="p-4">
+                                            <span className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-bold">
+                                                {product.stockQuantity} left
+                                            </span>
+                                        </td>
+                                        <td className="p-4">
+                                            <Link
+                                                to={`/AdminDashboard?tab=products&edit=${product.id}`}
+                                                className="text-blue-600 hover:text-blue-800 font-semibold text-sm"
+                                            >
+                                                Update Stock →
+                                            </Link>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            )}
+
+            {/* All Good Message */}
+            {alerts.totalOutOfStockCount === 0 && alerts.totalLowStockCount === 0 && (
+                <div className="bg-green-50 border-2 border-green-300 rounded-xl shadow-lg p-12 text-center">
+                    <svg className="w-16 h-16 text-green-600 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <h3 className="text-2xl font-bold text-green-900 mb-2">All Products in Stock!</h3>
+                    <p className="text-green-700">No inventory alerts at this time.</p>
+                </div>
+            )}
+        </div>
+    );
+};
+
 // --- 4. Main AdminDashboard Component (The Tab Controller) ---
 function AdminDashboard() {
-    const [activeTab, setActiveTab] = useState('products'); // 'products', 'orders', 'customers', 'coupons'
+    const [activeTab, setActiveTab] = useState('products'); // 'products', 'orders', 'customers', 'coupons', 'analytics', 'customers-analytics', 'inventory'
 
     const renderTabContent = () => {
         switch (activeTab) {
@@ -1276,6 +1739,64 @@ function AdminDashboard() {
                                     <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
                                 </svg>
                                 View Customers
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('coupons')}
+                                className={`flex-1 px-6 py-3 rounded-lg font-semibold text-sm transition-all duration-200 flex items-center justify-center gap-2 ${activeTab === 'coupons'
+                                    ? 'bg-green-600 text-white shadow-md'
+                                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                                    }`}
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"></path>
+                                    <path d="M3 5v14a2 2 0 0 0 2 2h16v-5"></path>
+                                    <path d="M18 12a2 2 0 0 0 0 4h4v-4Z"></path>
+                                </svg>
+                                Coupons
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('analytics')}
+                                className={`flex-1 px-6 py-3 rounded-lg font-semibold text-sm transition-all duration-200 flex items-center justify-center gap-2 ${activeTab === 'analytics'
+                                    ? 'bg-green-600 text-white shadow-md'
+                                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                                    }`}
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M3 3v18h18"></path>
+                                    <path d="M18 7v10"></path>
+                                    <path d="M13 12v5"></path>
+                                    <path d="M8 9v8"></path>
+                                </svg>
+                                Sales Analytics
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('customers-analytics')}
+                                className={`flex-1 px-6 py-3 rounded-lg font-semibold text-sm transition-all duration-200 flex items-center justify-center gap-2 ${activeTab === 'customers-analytics'
+                                    ? 'bg-green-600 text-white shadow-md'
+                                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                                    }`}
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="9" cy="7" r="4"></circle>
+                                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                                </svg>
+                                Customer Analytics
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('inventory')}
+                                className={`flex-1 px-6 py-3 rounded-lg font-semibold text-sm transition-all duration-200 flex items-center justify-center gap-2 ${activeTab === 'inventory'
+                                    ? 'bg-green-600 text-white shadow-md'
+                                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                                    }`}
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+                                    <line x1="3" y1="6" x2="21" y2="6"></line>
+                                    <path d="M16 10a4 4 0 0 1-8 0"></path>
+                                </svg>
+                                Inventory Alerts
                             </button>
                         </nav>
                     </div>

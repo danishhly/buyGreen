@@ -42,10 +42,10 @@ function Login() {
       return;
     }
 
-    const passwordValidation = validatePassword(formData.password);
-    if (!passwordValidation.isValid) {
-      error(passwordValidation.message);
-      setMessage(passwordValidation.message);
+    // Only check if password is provided, not length (for login, we just need to authenticate)
+    if (!formData.password || formData.password.trim() === '') {
+      error('Password is required');
+      setMessage('Password is required');
       setIsLoading(false);
       return;
     }
