@@ -62,6 +62,24 @@ public class OrderService {
         if (orderRequest.getShippingAddress() != null) {
             order.setShippingAddress(orderRequest.getShippingAddress());
         }
+        if (orderRequest.getLocation() != null) {
+            order.setLocation(orderRequest.getLocation());
+        }
+        if (orderRequest.getStreet() != null) {
+            order.setStreet(orderRequest.getStreet());
+        }
+        if (orderRequest.getCity() != null) {
+            order.setCity(orderRequest.getCity());
+        }
+        if (orderRequest.getState() != null) {
+            order.setState(orderRequest.getState());
+        }
+        if (orderRequest.getCountry() != null) {
+            order.setCountry(orderRequest.getCountry());
+        }
+        if (orderRequest.getPincode() != null) {
+            order.setPincode(orderRequest.getPincode());
+        }
 
         List<OrderRequest.OrderItemRequest> requestedItems = orderRequest.getItems();
         if (requestedItems == null || requestedItems.isEmpty()) {

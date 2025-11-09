@@ -28,6 +28,12 @@ public class Order {
     private OrderStatus status = OrderStatus.PENDING;
     
     private String shippingAddress;
+    private String location;
+    private String street;
+    private String city;
+    private String state;
+    private String country;
+    private String pincode;
     private String trackingNumber;
     
     private String couponCode;
