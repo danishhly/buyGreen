@@ -13,6 +13,8 @@ const CartPage = () => {
     const [appliedCoupon, setAppliedCoupon] = useState(null);
     const [isValidatingCoupon, setIsValidatingCoupon] = useState(false);
     const [discount, setDiscount] = useState(0);
+    const [location, setLocation] = useState('');
+    const [showLocationModal, setShowLocationModal] = useState(false);
 
     const handleDecrease = async (item) => {
         try {
@@ -51,54 +53,41 @@ const CartPage = () => {
             return;
         }
 
-        try {
-            setIsProcessingPayment(true);
-
-            const totalAmount = subtotal - discount;
-            const paymentOrder = await createPaymentOrder(totalAmount);
-
-            const razorpayKey = import.meta.env.VITE_RAZORPAY_KEY_ID;
-            const canUseRazorpay = Boolean(razorpayKey) && window.Razorpay && !paymentOrder.mock;
-
-            if (!canUseRazorpay) {
-                const order = await placeOrder(null, appliedCoupon?.code);
-                navigate('/order-success', { state: { order } });
-                return;
-            }
-            const options = {
-                key: razorpayKey,
-                amount: paymentOrder.amount,
-                currency: paymentOrder.currency,
-                name: 'buygron.',
-                description: 'Order Payment',
-                order_id: paymentOrder.id,
-                handler: async () => {
-                    try {
-                        const order = await placeOrder(null, appliedCoupon?.code);
-                        navigate('/order-success', { state: { order } });
-                    } catch (err) {
-                        console.error('Failed to create order after payment', err);
-                        error('Something went wrong finalizing your order.');
-                    }
-                },
-                theme: {
-                    color: '#15803d'
-                }
-            };
-
-            const razorpayInstance = new window.Razorpay(options);
-            razorpayInstance.on('payment.failed', (response) => {
-                console.error('Payment failed', response);
-                error('Payment failed. Please try again.');
-            });
-
-            razorpayInstance.open();
-        } catch (err) {
-            console.error('Checkout failed', err);
-            error('Checkout failed. Please try again.');
-        } finally {
-            setIsProcessingPayment(false);
+        // Show location modal if location is not provided
+        if (!location || location.trim() === '') {
+            setShowLocationModal(true);
+            return;
         }
+
+        // Calculate total amount
+        const totalAmount = subtotal - discount;
+        
+        // Navigate to payment page with payment data
+        navigate('/payment', {
+            state: {
+                amount: totalAmount,
+                location: location.trim(),
+                couponCode: appliedCoupon?.code || null
+            }
+        });
+    };
+
+    const handleLocationSubmit = () => {
+        if (!location || location.trim() === '') {
+            warning('Please enter your location');
+            return;
+        }
+        setShowLocationModal(false);
+        
+        // Calculate total amount and navigate to payment page
+        const totalAmount = subtotal - discount;
+        navigate('/payment', {
+            state: {
+                amount: totalAmount,
+                location: location.trim(),
+                couponCode: appliedCoupon?.code || null
+            }
+        });
     };
 
     // Calculate the total price
@@ -356,6 +345,48 @@ const CartPage = () => {
                         </div>
                     </div>
                 )}
+
+            {/* Location Modal */}
+            {showLocationModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
+                        <h3 className="text-xl font-bold text-gray-900 mb-4">Enter Your Location</h3>
+                        <p className="text-sm text-gray-600 mb-4">
+                            Please provide your location for order delivery.
+                        </p>
+                        <input
+                            type="text"
+                            value={location}
+                            onChange={(e) => setLocation(e.target.value)}
+                            placeholder="e.g., Mumbai, Maharashtra"
+                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 mb-4"
+                            onKeyPress={(e) => {
+                                if (e.key === 'Enter') {
+                                    handleLocationSubmit();
+                                }
+                            }}
+                            autoFocus
+                        />
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => {
+                                    setShowLocationModal(false);
+                                    setLocation('');
+                                }}
+                                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 font-semibold hover:bg-gray-50 transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleLocationSubmit}
+                                className="flex-1 px-4 py-2 bg-green-700 text-white rounded-lg font-semibold hover:bg-green-800 transition-colors"
+                            >
+                                Continue
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
             </main>
         </div>
     );

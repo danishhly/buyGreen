@@ -600,6 +600,11 @@ const OrderList = () => {
                                             <span className="font-semibold">Address:</span> {order.shippingAddress}
                                         </p>
                                     )}
+                                    {order.location && (
+                                        <p className="text-sm text-gray-600 mt-1">
+                                            <span className="font-semibold">Location:</span> {order.location}
+                                        </p>
+                                    )}
                                 </div>
                                 <div className="flex flex-col items-end gap-2">
                                     <span className="text-xl font-bold text-green-700">₹{order.totalAmount.toFixed(2)}</span>

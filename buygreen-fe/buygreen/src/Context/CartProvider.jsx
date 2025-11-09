@@ -161,7 +161,7 @@ export const CartProvider = ({ children }) => {
         return response.data;
     };
 
-    const placeOrder = async (shippingAddress = null, couponCode = null) => {
+    const placeOrder = async (shippingAddress = null, location = null, couponCode = null) => {
         const customer = getCustomer();
         if (!customer) throw new Error("User is not logged in.");
 
@@ -185,6 +185,7 @@ export const CartProvider = ({ children }) => {
                 quantity: item.quantity
             })),
             shippingAddress: address || null,
+            location: location || null,
             couponCode: couponCode || null
         };
 

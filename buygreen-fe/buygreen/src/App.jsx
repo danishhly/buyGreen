@@ -14,6 +14,7 @@ const Login = lazy(() => import("./Pages/Login.jsx"));
 const AdminDashboard = lazy(() => import("./Pages/AdminDashboard.jsx"));
 const CustomerHome = lazy(() => import("./Pages/CustomerHome.jsx"));
 const CartPage = lazy(() => import('./Pages/CartPage.jsx'));
+const PaymentPage = lazy(() => import('./Pages/PaymentPage.jsx'));
 const OrderSuccess = lazy(() => import('./Pages/OrderSuccess.jsx'));
 const Orders = lazy(() => import('./Pages/Orders.jsx'));
 const Profile = lazy(() => import('./Pages/Profile.jsx'));
@@ -70,6 +71,7 @@ function App() {
             <Route element={<AppLayout />}>
               <Route path="/CustomerHome" element={<CustomerHome />} />
               <Route path="/cart" element={<CartPage />} />
+              <Route path="/payment" element={<PaymentPage />} />
               <Route path="/order-success" element={<OrderSuccess />} />
               <Route path="/orders" element={<Orders />} />
               <Route path="/profile" element={<Profile />} />
