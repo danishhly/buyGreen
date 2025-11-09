@@ -26,6 +26,6 @@ RUN ./mvnw clean package -DskipTests
 # Expose port 8080
 EXPOSE 8080
 
-# Run the application
-ENTRYPOINT ["java", "-jar", "target/buygreen-0.0.1-SNAPSHOT.jar"]
+# Run the application with preview features enabled
+ENTRYPOINT ["java", "--enable-preview", "-jar", "target/buygreen-0.0.1-SNAPSHOT.jar"]
 
