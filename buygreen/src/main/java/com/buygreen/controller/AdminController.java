@@ -158,4 +158,37 @@ public class AdminController {
             return ResponseEntity.badRequest().body(Map.of("message", "Failed to delete coupon: " + e.getMessage()));
         }
     }
+
+    @Autowired
+    private com.buygreen.service.AnalyticsService analyticsService;
+
+    @Autowired
+    private com.buygreen.service.InventoryService inventoryService;
+
+    @GetMapping("/analytics/sales")
+    public ResponseEntity<?> getSalesAnalytics() {
+        try {
+            return ResponseEntity.ok(analyticsService.getSalesAnalytics());
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Failed to fetch analytics: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/analytics/customers")
+    public ResponseEntity<?> getCustomerAnalytics() {
+        try {
+            return ResponseEntity.ok(analyticsService.getCustomerAnalytics());
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Failed to fetch customer analytics: " + e.getMessage()));
+        }
+    }
+
+    @GetMapping("/analytics/inventory")
+    public ResponseEntity<?> getInventoryAlerts() {
+        try {
+            return ResponseEntity.ok(inventoryService.getInventoryAlerts());
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Failed to fetch inventory alerts: " + e.getMessage()));
+        }
+    }
 }
