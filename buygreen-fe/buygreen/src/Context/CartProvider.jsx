@@ -161,13 +161,20 @@ export const CartProvider = ({ children }) => {
         return response.data;
     };
 
-    const placeOrder = async (shippingAddress = null, location = null, couponCode = null) => {
+    const placeOrder = async (shippingAddress = null, location = null, addressData = null, couponCode = null, orderItems = null, orderAmount = null) => {
         const customer = getCustomer();
         if (!customer) throw new Error("User is not logged in.");
 
-        const total = cartItems.reduce((sum, item) => {
+        // Use provided items and amount, or fall back to cart items
+        const itemsToOrder = orderItems || cartItems;
+        const totalAmount = orderAmount !== null ? orderAmount : itemsToOrder.reduce((sum, item) => {
             return sum + (item.price * item.quantity);
         }, 0);
+
+        // Validate that we have items to order
+        if (!itemsToOrder || itemsToOrder.length === 0) {
+            throw new Error("No items to order. Cart is empty.");
+        }
 
         // Get shipping address from customer profile if not provided
         let address = shippingAddress;
@@ -177,24 +184,53 @@ export const CartProvider = ({ children }) => {
 
         const payload = {
             customerId: Number(customer.id),
-            totalAmount: total,
-            items: cartItems.map(item => ({
+            totalAmount: Number(totalAmount.toFixed(2)), // Ensure it's a number with 2 decimal places
+            items: itemsToOrder.map(item => ({
                 productId: item.productId,
                 productName: item.productName,
-                price: item.price,
-                quantity: item.quantity
+                price: Number(item.price),
+                quantity: Number(item.quantity)
             })),
             shippingAddress: address || null,
             location: location || null,
+            street: addressData?.street || null,
+            city: addressData?.city || null,
+            state: addressData?.state || null,
+            country: addressData?.country || null,
+            pincode: addressData?.pincode || null,
             couponCode: couponCode || null
         };
 
-        const response = await api.post("/orders/create", payload, {
-            headers: { 'Content-Type': 'application/json' }
-        });
+        console.log("Placing order with payload:", payload);
 
-        await fetchCart(); // Clear cart after order
-        return response.data;
+        try {
+            const response = await api.post("/orders/create", payload, {
+                headers: { 'Content-Type': 'application/json' }
+            });
+            
+            console.log("Order placed successfully:", response.data);
+
+            // Only clear cart if we used cart items (not provided items)
+            // Don't fail the order if cart clearing fails
+            if (!orderItems) {
+                try {
+                    await fetchCart(); // Clear cart after order
+                } catch (cartError) {
+                    console.warn("Failed to clear cart after order, but order was successful:", cartError);
+                    // Don't throw - order was successful, cart clearing is not critical
+                }
+            }
+            return response.data;
+        } catch (err) {
+            console.error("Order placement error:", err);
+            // Check if it's actually a permission error or something else
+            if (err.response?.status === 403) {
+                const errorMessage = err.response?.data?.message || "You do not have permission to place orders. Please contact support.";
+                throw new Error(errorMessage);
+            }
+            const errorMessage = err.response?.data?.message || err.message || "Failed to place order";
+            throw new Error(errorMessage);
+        }
     };
 
     const fetchOrders = async () => {

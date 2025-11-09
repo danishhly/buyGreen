@@ -48,7 +48,9 @@ api.interceptors.response.use(
                 error.message = data?.message || 'Session expired. Please login again.';
                 break;
             case 403:
+                // Only show permission error if there's a specific message, otherwise use generic
                 error.message = data?.message || 'You do not have permission to perform this action.';
+                // Don't clear storage for 403, let the calling code handle it
                 break;
             case 404:
                 error.message = data?.message || 'Resource not found.';

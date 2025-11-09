@@ -595,14 +595,26 @@ const OrderList = () => {
                                             <span className="font-semibold">Tracking:</span> <span className="font-mono">{order.trackingNumber}</span>
                                         </p>
                                     )}
+                                    {(order.street || order.city || order.state || order.pincode) && (
+                                        <div className="text-sm text-gray-600 mt-2">
+                                            <span className="font-semibold">Delivery Address:</span>
+                                            <div className="ml-4 mt-1 space-y-1">
+                                                {order.street && <p>{order.street}</p>}
+                                                <p>
+                                                    {[order.city, order.state, order.pincode].filter(Boolean).join(', ')}
+                                                    {order.country && `, ${order.country}`}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    )}
                                     {order.shippingAddress && (
                                         <p className="text-sm text-gray-600 mt-1">
-                                            <span className="font-semibold">Address:</span> {order.shippingAddress}
+                                            <span className="font-semibold">Shipping Address:</span> {order.shippingAddress}
                                         </p>
                                     )}
                                     {order.location && (
                                         <p className="text-sm text-gray-600 mt-1">
-                                            <span className="font-semibold">Location:</span> {order.location}
+                                            <span className="font-semibold">Location/Landmark:</span> {order.location}
                                         </p>
                                     )}
                                 </div>

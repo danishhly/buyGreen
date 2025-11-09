@@ -9,6 +9,8 @@ export default defineConfig({
     'process.env': {}
   },
   server: {
+    port: 5173, // Default port, will use next available if busy
+    strictPort: false, // Allow using next available port if 5173 is busy
     allowedHosts: [
       '34e27de4-5ef2-4ac3-a873-76d4d8983829-00-z74knzzypso4.sisko.replit.dev'
     ]

@@ -75,16 +75,47 @@ const CartPage = () => {
                 amount: totalAmount,
                 location: location.trim() || `${address.city}, ${address.state}`,
                 address: address,
-                couponCode: appliedCoupon?.code || null
+                couponCode: appliedCoupon?.code || null,
+                cartItems: cartItems // Pass cart items for order creation
             }
         });
     };
 
+    const handleAddressChange = (field, value) => {
+        setAddress(prev => ({
+            ...prev,
+            [field]: value
+        }));
+    };
+
     const handleLocationSubmit = () => {
-        if (!location || location.trim() === '') {
-            warning('Please enter your location');
+        // Validate required fields
+        if (!address.street || !address.street.trim()) {
+            warning('Please enter your street address');
             return;
         }
+        if (!address.city || !address.city.trim()) {
+            warning('Please enter your city');
+            return;
+        }
+        if (!address.state || !address.state.trim()) {
+            warning('Please enter your state');
+            return;
+        }
+        if (!address.pincode || !address.pincode.trim()) {
+            warning('Please enter your pincode');
+            return;
+        }
+        if (!address.country || !address.country.trim()) {
+            warning('Please enter your country');
+            return;
+        }
+
+        // Set location as city, state if not provided
+        if (!location || location.trim() === '') {
+            setLocation(`${address.city}, ${address.state}`);
+        }
+
         setShowLocationModal(false);
         
         // Calculate total amount and navigate to payment page
@@ -92,8 +123,10 @@ const CartPage = () => {
         navigate('/payment', {
             state: {
                 amount: totalAmount,
-                location: location.trim(),
-                couponCode: appliedCoupon?.code || null
+                location: location.trim() || `${address.city}, ${address.state}`,
+                address: address,
+                couponCode: appliedCoupon?.code || null,
+                cartItems: cartItems // Pass cart items for order creation
             }
         });
     };
@@ -354,42 +387,129 @@ const CartPage = () => {
                     </div>
                 )}
 
-            {/* Location Modal */}
+            {/* Address Modal */}
             {showLocationModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
-                        <h3 className="text-xl font-bold text-gray-900 mb-4">Enter Your Location</h3>
-                        <p className="text-sm text-gray-600 mb-4">
-                            Please provide your location for order delivery.
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+                    <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full p-6 my-8 max-h-[90vh] overflow-y-auto">
+                        <h3 className="text-2xl font-bold text-gray-900 mb-2">Delivery Address</h3>
+                        <p className="text-sm text-gray-600 mb-6">
+                            Please provide your complete address for order delivery.
                         </p>
-                        <input
-                            type="text"
-                            value={location}
-                            onChange={(e) => setLocation(e.target.value)}
-                            placeholder="e.g., Mumbai, Maharashtra"
-                            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 mb-4"
-                            onKeyPress={(e) => {
-                                if (e.key === 'Enter') {
-                                    handleLocationSubmit();
-                                }
-                            }}
-                            autoFocus
-                        />
-                        <div className="flex gap-3">
+                        
+                        <div className="space-y-4">
+                            {/* Street Address */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Street Address <span className="text-red-500">*</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    value={address.street}
+                                    onChange={(e) => handleAddressChange('street', e.target.value)}
+                                    placeholder="House/Flat No., Building Name, Street"
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                                    required
+                                />
+                            </div>
+
+                            {/* City and State Row */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        City <span className="text-red-500">*</span>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={address.city}
+                                        onChange={(e) => handleAddressChange('city', e.target.value)}
+                                        placeholder="City"
+                                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                                        required
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        State <span className="text-red-500">*</span>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={address.state}
+                                        onChange={(e) => handleAddressChange('state', e.target.value)}
+                                        placeholder="State"
+                                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                                        required
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Country and Pincode Row */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Country <span className="text-red-500">*</span>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={address.country}
+                                        onChange={(e) => handleAddressChange('country', e.target.value)}
+                                        placeholder="Country"
+                                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                                        required
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                        Pincode <span className="text-red-500">*</span>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={address.pincode}
+                                        onChange={(e) => handleAddressChange('pincode', e.target.value.replace(/\D/g, ''))}
+                                        placeholder="Pincode"
+                                        maxLength="6"
+                                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                                        required
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Location (Optional) */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Location (Optional)
+                                </label>
+                                <input
+                                    type="text"
+                                    value={location}
+                                    onChange={(e) => setLocation(e.target.value)}
+                                    placeholder="e.g., Near Metro Station, Landmark"
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="flex gap-3 mt-6">
                             <button
                                 onClick={() => {
                                     setShowLocationModal(false);
+                                    setAddress({
+                                        street: '',
+                                        city: '',
+                                        state: '',
+                                        country: 'India',
+                                        pincode: ''
+                                    });
                                     setLocation('');
                                 }}
-                                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 font-semibold hover:bg-gray-50 transition-colors"
+                                className="flex-1 px-4 py-3 border border-gray-300 rounded-lg text-gray-700 font-semibold hover:bg-gray-50 transition-colors"
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={handleLocationSubmit}
-                                className="flex-1 px-4 py-2 bg-green-700 text-white rounded-lg font-semibold hover:bg-green-800 transition-colors"
+                                className="flex-1 px-4 py-3 bg-green-700 text-white rounded-lg font-semibold hover:bg-green-800 transition-colors"
                             >
-                                Continue
+                                Continue to Payment
                             </button>
                         </div>
                     </div>

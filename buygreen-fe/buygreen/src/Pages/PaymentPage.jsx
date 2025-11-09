@@ -34,11 +34,20 @@ const PaymentPage = () => {
     useEffect(() => {
         // Get payment data from location state
         const data = location.state;
-        if (!data || !data.amount || !data.location) {
+        if (!data || !data.amount || (!data.location && !data.address)) {
             error('Payment information missing. Redirecting to cart...');
             setTimeout(() => navigate('/cart'), 2000);
             return;
         }
+        
+        // Validate cart items are present
+        if (!data.cartItems || data.cartItems.length === 0) {
+            error('Cart items missing. Redirecting to cart...');
+            setTimeout(() => navigate('/cart'), 2000);
+            return;
+        }
+        
+        console.log("Payment data loaded:", data);
         setPaymentData(data);
     }, [location, navigate, error]);
 
@@ -86,17 +95,42 @@ const PaymentPage = () => {
             // Wait a moment to show success message
             await new Promise(resolve => setTimeout(resolve, 1500));
             
-            // Place the order
-            const order = await placeOrder(null, paymentData.location, paymentData.couponCode);
-            success('Payment successful! Order placed.');
+            // Place the order with address data, items, and amount from payment
+            const order = await placeOrder(
+                null, 
+                paymentData.location, 
+                paymentData.address, 
+                paymentData.couponCode,
+                paymentData.cartItems, // Pass cart items
+                paymentData.amount     // Pass the actual paid amount
+            );
             
-            // Navigate to order success page
-            setTimeout(() => {
-                navigate('/order-success', { state: { order } });
-            }, 1000);
+            // Check if order was actually created (has an ID)
+            if (order && order.id) {
+                success('Payment successful! Order placed.');
+                
+                // Navigate to order success page
+                setTimeout(() => {
+                    navigate('/order-success', { state: { order } });
+                }, 1000);
+            } else {
+                throw new Error('Order was not created properly');
+            }
         } catch (err) {
             console.error('Failed to place order:', err);
-            error('Payment successful but failed to place order. Please contact support.');
+            const errorMessage = err.message || 'Unknown error occurred';
+            
+            // Check if it's a permission error specifically
+            if (errorMessage.includes('permission') || errorMessage.includes('403')) {
+                error('Payment successful but you do not have permission to place orders. Please contact support with your payment details.');
+            } else {
+                error(`Payment successful but failed to place order: ${errorMessage}. Please contact support.`);
+            }
+            
+            // Still navigate to cart so user can try again
+            setTimeout(() => {
+                navigate('/cart');
+            }, 3000);
         }
     };
 
