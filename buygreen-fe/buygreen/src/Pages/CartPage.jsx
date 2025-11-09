@@ -14,6 +14,13 @@ const CartPage = () => {
     const [isValidatingCoupon, setIsValidatingCoupon] = useState(false);
     const [discount, setDiscount] = useState(0);
     const [location, setLocation] = useState('');
+    const [address, setAddress] = useState({
+        street: '',
+        city: '',
+        state: '',
+        country: 'India',
+        pincode: ''
+    });
     const [showLocationModal, setShowLocationModal] = useState(false);
 
     const handleDecrease = async (item) => {
@@ -53,8 +60,8 @@ const CartPage = () => {
             return;
         }
 
-        // Show location modal if location is not provided
-        if (!location || location.trim() === '') {
+        // Show location modal if address is not complete
+        if (!address.street || !address.city || !address.state || !address.pincode) {
             setShowLocationModal(true);
             return;
         }
@@ -66,7 +73,8 @@ const CartPage = () => {
         navigate('/payment', {
             state: {
                 amount: totalAmount,
-                location: location.trim(),
+                location: location.trim() || `${address.city}, ${address.state}`,
+                address: address,
                 couponCode: appliedCoupon?.code || null
             }
         });
