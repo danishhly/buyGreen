@@ -8,6 +8,9 @@ export default defineConfig({
   define: {
     'process.env': {}
   },
+  resolve: {
+    extensions: ['.js', '.jsx', '.ts', '.tsx', '.json']
+  },
   server: {
     port: 5173, // Default port, will use next available if busy
     strictPort: false, // Allow using next available port if 5173 is busy
