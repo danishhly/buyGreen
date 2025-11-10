@@ -268,21 +268,33 @@ function Signup() {
                         </div>
                     )}
 
+                    {/* Divider */}
+                    <div className="relative my-6">
+                        <div className="absolute inset-0 flex items-center">
+                            <div className="w-full border-t border-gray-300"></div>
+                        </div>
+                        <div className="relative flex justify-center text-sm">
+                            <span className="px-2 bg-white text-gray-500">Or continue with</span>
+                        </div>
+                    </div>
+
                     {/* Google Sign Up */}
-                    <div className="mt-6">
-                        <div className="relative">
-                            <GoogleLogin
-                                onSuccess={handleGoogleSuccess}
-                                onError={handleGoogleError}
-                                useOneTap={false}
-                                theme="outline"
-                                size="large"
-                                text="signup_with"
-                                shape="rectangular"
-                                logo_alignment="left"
-                            />
+                    <div className="w-full">
+                        <div className="relative w-full">
+                            <div className="w-full [&>div]:w-full [&>div>iframe]:w-full">
+                                <GoogleLogin
+                                    onSuccess={handleGoogleSuccess}
+                                    onError={handleGoogleError}
+                                    useOneTap={false}
+                                    theme="outline"
+                                    size="large"
+                                    text="signup_with"
+                                    shape="rectangular"
+                                    logo_alignment="left"
+                                />
+                            </div>
                             {isGoogleLoading && (
-                                <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-75 rounded-lg">
+                                <div className="absolute inset-0 flex items-center justify-center bg-white bg-opacity-75 rounded-lg z-10">
                                     <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-green-600"></div>
                                 </div>
                             )}

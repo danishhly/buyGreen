@@ -8,3 +8,17 @@
         width: 0%;
     }
 }
+
+/* Google Sign-In Button Styling */
+div[id*="google-signin"] {
+    width: 100% !important;
+}
+
+div[id*="credential-button"] {
+    width: 100% !important;
+}
+
+iframe[id*="credential-button"] {
+    width: 100% !important;
+    max-width: 100% !important;
+}
