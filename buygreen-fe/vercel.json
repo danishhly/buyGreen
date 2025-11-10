@@ -1,0 +1,7 @@
+{
+  "buildCommand": "cd buygreen && npm install && npm run build",
+  "outputDirectory": "buygreen/dist",
+  "installCommand": "cd buygreen && npm install",
+  "framework": "vite"
+}
+
