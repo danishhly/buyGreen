@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import axios from 'axios'; // We use plain axios, no token needed
+import api from '../api/axiosConfig'; // Use the configured API instance
 
 const ForgotPassword = () => {
     const [email, setEmail] = useState('');
@@ -12,7 +12,7 @@ const ForgotPassword = () => {
         setIsLoading(true);
         setMessage('');
         try {
-            const response = await axios.post('http://localhost:8080/forgot-password', { email });
+            const response = await api.post('/forgot-password', { email });
             setMessage(response.data.message);
         } catch (error) {
             setMessage(error.response?.data?.message || 'An error occurred.');
