@@ -295,9 +295,9 @@ function Login() {
           </div>
 
           {/* Google Sign In */}
-          <div className="w-full">
-            <div className="relative w-full">
-              <div className="w-full [&>div]:w-full [&>div>iframe]:w-full">
+          <div className="w-full flex justify-center">
+            <div className="relative w-full max-w-full">
+              <div className="w-full flex justify-center [&>div]:w-full [&>div]:flex [&>div]:justify-center [&>div>iframe]:w-full">
                 <GoogleLogin
                   onSuccess={handleGoogleSuccess}
                   onError={handleGoogleError}

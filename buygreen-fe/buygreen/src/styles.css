@@ -10,15 +10,22 @@
 }
 
 /* Google Sign-In Button Styling */
-div[id*="google-signin"] {
-    width: 100% !important;
-}
-
+div[id*="google-signin"],
 div[id*="credential-button"] {
     width: 100% !important;
+    display: flex !important;
+    justify-content: center !important;
 }
 
 iframe[id*="credential-button"] {
     width: 100% !important;
     max-width: 100% !important;
+    margin: 0 auto !important;
+}
+
+/* Ensure Google button container aligns properly */
+div[data-testid*="google"],
+div[role="button"][id*="credential"] {
+    width: 100% !important;
+    margin: 0 auto !important;
 }
