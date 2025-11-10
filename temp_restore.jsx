@@ -1,6 +1,6 @@
 // src/Contexts/CartProvider.jsx
 import React, { useState, useEffect, useCallback } from 'react';
-import api from '@/api/axiosConfig.jsx';
+import api from '../api/axiosConfig.jsx';
 import { CartContext } from './CartContext'; // <-- Import the context
 
 // This file now only has ONE export: the component itself.
