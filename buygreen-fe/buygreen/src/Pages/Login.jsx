@@ -132,14 +132,15 @@ function Login() {
   };
 
   const handleGoogleError = () => {
-    error("Google login was cancelled or failed. Please try again.");
-    setMessage("Google login failed. Please try again.");
+    // Only show error if it's not a user cancellation
+    console.error("Google login error");
+    // Don't show error toast for user cancellation - it's not really an error
   };
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row">
-      {/* Left Side - Quote Panel */}
-      <div className="w-full lg:w-2/5 relative overflow-hidden bg-gradient-to-br from-green-500 via-emerald-600 to-teal-700 lg:rounded-r-3xl">
+      {/* Left Side - Quote Panel - Hidden on Mobile */}
+      <div className="hidden lg:flex lg:w-2/5 relative overflow-hidden bg-gradient-to-br from-green-500 via-emerald-600 to-teal-700 rounded-r-3xl">
         {/* Abstract Wave Pattern */}
         <div className="absolute inset-0 opacity-20">
           <div className="absolute top-0 left-0 w-full h-full">
@@ -160,26 +161,26 @@ function Login() {
           </div>
         </div>
 
-        <div className="relative z-10 flex flex-col justify-center p-6 lg:p-12 text-white min-h-[250px] lg:min-h-screen">
-          <div className="text-xs uppercase tracking-wider text-green-100 mb-4 lg:mb-8">A WISE QUOTE</div>
+        <div className="relative z-10 flex flex-col justify-between p-12 text-white">
+          <div className="text-xs uppercase tracking-wider text-green-100 mb-8">A WISE QUOTE</div>
 
           <div className="flex-1 flex flex-col justify-center">
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-serif font-bold mb-4 lg:mb-6 leading-tight">
+            <h1 className="text-5xl md:text-6xl font-serif font-bold mb-6 leading-tight">
               Choose <span className="text-[#033817]">Green,</span><br />Live Better
             </h1>
-            <p className="text-sm sm:text-base lg:text-lg text-green-50 leading-relaxed max-w-md">
+            <p className="text-lg text-green-50 leading-relaxed max-w-md">
               Every small step towards sustainability makes a difference. Choose eco-friendly products and be part of the change our planet needs.
             </p>
           </div>
         </div>
       </div>
 
-      {/* Right Side - Form */}
-      <div className="w-full lg:w-3/5 flex items-center justify-center bg-white p-6 sm:p-8 lg:p-12">
+      {/* Right Side - Form - Full Width on Mobile */}
+      <div className="w-full lg:w-3/5 flex items-center justify-center bg-white p-6 sm:p-8 lg:p-12 min-h-screen lg:min-h-0">
         <div className="w-full max-w-md">
           {/* Logo */}
-          <div className="mb-8 lg:mb-12">
-            <Link to="/" className="flex items-center mb-6 lg:mb-8">
+          <div className="mb-8 lg:mb-12 text-center lg:text-left">
+            <Link to="/" className="flex items-center justify-center lg:justify-start mb-6 lg:mb-8">
               <Logo className="text-3xl lg:text-4xl" />
             </Link>
 
