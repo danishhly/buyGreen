@@ -1,6 +1,6 @@
 // src/Contexts/CartProvider.jsx
 import React, { useState, useEffect, useCallback } from 'react';
-import api from '@/api/axiosConfig.jsx';
+import api from '../api/axiosConfig';
 import { CartContext } from './CartContext'; // <-- Import the context
 
 // This file now only has ONE export: the component itself.
@@ -207,7 +207,7 @@ export const CartProvider = ({ children }) => {
             const response = await api.post("/orders/create", payload, {
                 headers: { 'Content-Type': 'application/json' }
             });
-            
+
             console.log("Order placed successfully:", response.data);
             console.log("Order ID:", response.data?.id);
 
@@ -226,20 +226,20 @@ export const CartProvider = ({ children }) => {
                     // Don't throw - order was successful, cart clearing is not critical
                 }
             }
-            
+
             // Return the order object
             return response.data;
         } catch (err) {
             console.error("Order placement error:", err);
             console.error("Error response:", err.response?.data);
             console.error("Error status:", err.response?.status);
-            
+
             // Check if it's actually a permission error or something else
             if (err.response?.status === 403) {
                 const errorMessage = err.response?.data?.message || "You do not have permission to place orders. Please contact support.";
                 throw new Error(errorMessage);
             }
-            
+
             // For other errors, provide more context
             const errorMessage = err.response?.data?.message || err.message || "Failed to place order";
             throw new Error(errorMessage);
