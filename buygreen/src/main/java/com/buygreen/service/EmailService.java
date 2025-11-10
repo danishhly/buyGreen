@@ -18,7 +18,7 @@ public class EmailService {
     @Value("${frontend.url:http://localhost:5173}")
     private String frontendUrl;
 
-    @Value("${spring.mail.username}")
+    @Value("${spring.mail.username:}")
     private String fromEmail;
 
     public void sendPasswordResetEmail(String toEmail, String token) {

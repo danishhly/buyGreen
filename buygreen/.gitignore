@@ -9,6 +9,8 @@ target/
 .env.local
 .env.production
 .env.development
+.env.*
+!.env.example
 application-local.properties
 application-prod.properties
 
