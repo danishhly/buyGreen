@@ -98,6 +98,9 @@ function Login() {
     setIsGoogleLoading(true);
     setMessage("");
     try {
+      if (!credentialResponse?.credential) {
+        throw new Error("No credential received from Google");
+      }
       const response = await api.post("/auth/google", { token: credentialResponse.credential });
 
       const customer = response.data.customer;
@@ -123,18 +126,27 @@ function Login() {
 
     } catch (err) {
       console.error("Google login error:", err);
-      const errorMessage = err.response?.data?.message || "Google login failed. Please try again.";
-      error(errorMessage);
-      setMessage(errorMessage);
+      // Check if it's a network error (ERR_BLOCKED_BY_CLIENT usually means ad blocker)
+      if (err.message?.includes('ERR_BLOCKED_BY_CLIENT') || err.code === 'ERR_BLOCKED_BY_CLIENT') {
+        error("Google sign-in is blocked. Please disable ad blockers or browser extensions and try again.");
+        setMessage("Google sign-in is blocked. Please disable ad blockers and try again.");
+      } else {
+        const errorMessage = err.response?.data?.message || err.message || "Google login failed. Please try again.";
+        error(errorMessage);
+        setMessage(errorMessage);
+      }
     } finally {
       setIsGoogleLoading(false);
     }
   };
 
-  const handleGoogleError = () => {
+  const handleGoogleError = (error) => {
     // Only show error if it's not a user cancellation
-    console.error("Google login error");
-    // Don't show error toast for user cancellation - it's not really an error
+    console.error("Google login error:", error);
+    // Don't show error toast for user cancellation or popup blockers
+    if (error?.type !== 'popup_closed_by_user') {
+      // Only show error for actual errors, not user cancellation
+    }
   };
 
   return (
