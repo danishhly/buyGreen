@@ -3,6 +3,12 @@
   "outputDirectory": "buygreen/dist",
   "installCommand": "cd buygreen && npm install",
   "framework": "vite",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ],
   "headers": [
     {
       "source": "/site.webmanifest",

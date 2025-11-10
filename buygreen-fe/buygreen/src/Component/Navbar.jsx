@@ -355,6 +355,17 @@ const Navbar = () => {
                             >
                                 Contact
                             </button>
+                            
+                            {/* Mobile Logout Button */}
+                            {customer && (
+                                <button
+                                    onClick={handleLogout}
+                                    className="w-full text-left px-4 py-3 text-sm font-medium text-red-600 
+                                             hover:bg-red-50 hover:text-red-700 rounded-lg transition-colors border-t border-gray-200 mt-2 pt-4"
+                                >
+                                    Logout
+                                </button>
+                            )}
                         </div>
                     </div>
                 )}
