@@ -2,6 +2,20 @@
   "buildCommand": "cd buygreen && npm install && npm run build",
   "outputDirectory": "buygreen/dist",
   "installCommand": "cd buygreen && npm install",
-  "framework": "vite"
+  "framework": "vite",
+  "headers": [
+    {
+      "source": "/site.webmanifest",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/manifest+json"
+        },
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        }
+      ]
+    }
+  ]
 }
-
