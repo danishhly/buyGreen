@@ -101,7 +101,17 @@ function Login() {
       if (!credentialResponse?.credential) {
         throw new Error("No credential received from Google");
       }
+
+      console.log("Sending Google token to backend...");
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+      console.log("API Base URL:", apiBaseUrl);
+
       const response = await api.post("/auth/google", { token: credentialResponse.credential });
+      console.log("Google login response:", response.data);
+
+      if (!response.data || !response.data.customer) {
+        throw new Error("Invalid response from server");
+      }
 
       const customer = response.data.customer;
       const token = response.data.token;
@@ -125,11 +135,22 @@ function Login() {
       }, 500);
 
     } catch (err) {
-      console.error("Google login error:", err);
+      console.error("Google login error details:", {
+        message: err.message,
+        response: err.response,
+        code: err.code,
+        config: err.config
+      });
+
       // Check if it's a network error (ERR_BLOCKED_BY_CLIENT usually means ad blocker)
       if (err.message?.includes('ERR_BLOCKED_BY_CLIENT') || err.code === 'ERR_BLOCKED_BY_CLIENT') {
         error("Google sign-in is blocked. Please disable ad blockers or browser extensions and try again.");
         setMessage("Google sign-in is blocked. Please disable ad blockers and try again.");
+      } else if (!err.response) {
+        // Network error - likely CORS or backend not reachable
+        const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+        error(`Cannot connect to backend server. Please check if ${apiBaseUrl} is accessible.`);
+        setMessage(`Cannot connect to backend server. Please check if ${apiBaseUrl} is accessible.`);
       } else {
         const errorMessage = err.response?.data?.message || err.message || "Google login failed. Please try again.";
         error(errorMessage);
