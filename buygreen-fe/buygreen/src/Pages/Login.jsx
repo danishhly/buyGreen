@@ -137,9 +137,9 @@ function Login() {
   };
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen flex flex-col lg:flex-row">
       {/* Left Side - Quote Panel */}
-      <div className="hidden lg:flex lg:w-2/5 relative overflow-hidden bg-gradient-to-br from-green-500 via-emerald-600 to-teal-700 rounded-r-3xl">
+      <div className="w-full lg:w-2/5 relative overflow-hidden bg-gradient-to-br from-green-500 via-emerald-600 to-teal-700 lg:rounded-r-3xl">
         {/* Abstract Wave Pattern */}
         <div className="absolute inset-0 opacity-20">
           <div className="absolute top-0 left-0 w-full h-full">
@@ -160,14 +160,14 @@ function Login() {
           </div>
         </div>
 
-        <div className="relative z-10 flex flex-col justify-between p-12 text-white">
-          <div className="text-xs uppercase tracking-wider text-green-100 mb-8">A WISE QUOTE</div>
+        <div className="relative z-10 flex flex-col justify-center p-6 lg:p-12 text-white min-h-[250px] lg:min-h-screen">
+          <div className="text-xs uppercase tracking-wider text-green-100 mb-4 lg:mb-8">A WISE QUOTE</div>
 
           <div className="flex-1 flex flex-col justify-center">
-            <h1 className="text-5xl md:text-6xl font-serif font-bold mb-6 leading-tight">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-serif font-bold mb-4 lg:mb-6 leading-tight">
               Choose <span className="text-[#033817]">Green,</span><br />Live Better
             </h1>
-            <p className="text-lg text-green-50 leading-relaxed max-w-md">
+            <p className="text-sm sm:text-base lg:text-lg text-green-50 leading-relaxed max-w-md">
               Every small step towards sustainability makes a difference. Choose eco-friendly products and be part of the change our planet needs.
             </p>
           </div>
@@ -175,16 +175,16 @@ function Login() {
       </div>
 
       {/* Right Side - Form */}
-      <div className="w-full lg:w-3/5 flex items-center justify-center bg-white p-8 lg:p-12">
+      <div className="w-full lg:w-3/5 flex items-center justify-center bg-white p-6 sm:p-8 lg:p-12">
         <div className="w-full max-w-md">
           {/* Logo */}
-          <div className="mb-12">
-            <Link to="/" className="flex items-center mb-8">
-              <Logo className="text-4xl" />
+          <div className="mb-8 lg:mb-12">
+            <Link to="/" className="flex items-center mb-6 lg:mb-8">
+              <Logo className="text-3xl lg:text-4xl" />
             </Link>
 
-            <h2 className="text-4xl font-serif font-bold text-gray-900 mb-3">Welcome Back</h2>
-            <p className="text-gray-500">Enter your email and password to access your account</p>
+            <h2 className="text-3xl lg:text-4xl font-serif font-bold text-gray-900 mb-2 lg:mb-3">Welcome Back</h2>
+            <p className="text-sm lg:text-base text-gray-500">Enter your email and password to access your account</p>
           </div>
 
           {/* Form */}
