@@ -19,7 +19,11 @@ public class WebConfig {
             configuration.setAllowedOrigins(Arrays.asList(allowedOrigins.split(",")));
         } else {
             // Default to localhost for development
-            configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173", "http://localhost:5174"));
+            // For production, set CORS_ALLOWED_ORIGINS environment variable in Render
+            configuration.setAllowedOrigins(Arrays.asList(
+                "http://localhost:5173", 
+                "http://localhost:5174"
+            ));
         }
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
