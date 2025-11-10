@@ -134,6 +134,7 @@ const Navbar = () => {
             }`}>
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                     <div className="flex h-20 items-center justify-between">
+                        {/* Logo - Far Left */}
                         <div className="flex-shrink-0 group">
                             <Link 
                                 to="/CustomerHome" 
@@ -143,28 +144,73 @@ const Navbar = () => {
                             </Link>
                         </div>
 
-                        <div className="flex-1 max-w-2xl mx-8 hidden lg:block">
+                        {/* Navigation Links - Middle */}
+                        <div className="hidden lg:flex items-center gap-8 flex-1 justify-center">
+                            <button
+                                onClick={handleHomeClick}
+                                className="relative text-sm font-semibold text-gray-700 hover:text-green-600 
+                                         transition-colors group"
+                            >
+                                Home
+                                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-green-600 
+                                               group-hover:w-full transition-all duration-300"></span>
+                            </button>
+                            {navCategories.map((category) => (
+                                <button
+                                    key={category.name}
+                                    onClick={() => handleCategoryClick(category.category)}
+                                    className="relative text-sm font-semibold text-gray-700 hover:text-green-600 
+                                             transition-colors uppercase tracking-wide group"
+                                >
+                                    {category.name}
+                                    <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-green-600 
+                                                   group-hover:w-full transition-all duration-300"></span>
+                                </button>
+                            ))}
+                            <button
+                                onClick={handleAboutClick}
+                                className="relative text-sm font-semibold text-gray-700 hover:text-green-600 
+                                         transition-colors group"
+                            >
+                                About
+                                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-green-600 
+                                               group-hover:w-full transition-all duration-300"></span>
+                            </button>
+                            <button
+                                onClick={handleContactClick}
+                                className="relative text-sm font-semibold text-gray-700 hover:text-green-600 
+                                         transition-colors group"
+                            >
+                                Contact
+                                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-green-600 
+                                               group-hover:w-full transition-all duration-300"></span>
+                            </button>
+                        </div>
+
+                        {/* Search Bar - Between Nav and User Elements (Hidden on large screens, shown on medium) */}
+                        <div className="hidden md:block lg:hidden flex-1 max-w-md mx-4">
                             <form onSubmit={handleSearch} className="relative group">
                                 <input
                                     type="text"
-                                    placeholder="Search for eco-friendly products..."
+                                    placeholder="Search..."
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="w-full px-6 py-3 pl-12 pr-4 border-2 border-gray-200 rounded-full 
+                                    className="w-full px-4 py-2 pl-10 pr-4 border-2 border-gray-200 rounded-full 
                                              focus:ring-2 focus:ring-green-500 focus:border-green-500 outline-none
-                                             transition-all duration-300 group-hover:border-green-300"
+                                             transition-all duration-300 group-hover:border-green-300 text-sm"
                                 />
                                 <button
                                     type="submit"
-                                    className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-green-600 transition-colors"
+                                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-green-600 transition-colors"
                                 >
-                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                                     </svg>
                                 </button>
                             </form>
                         </div>
 
+                        {/* User Elements - Far Right */}
                         <div className="flex items-center gap-3">
                             {customer && (
                                 <Link
@@ -239,6 +285,7 @@ const Navbar = () => {
                                 </Link>
                             )}
 
+
                             <button
                                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                                 className="lg:hidden p-2 text-gray-600 hover:text-green-600 transition-colors"
@@ -254,56 +301,6 @@ const Navbar = () => {
                         </div>
                     </div>
 
-                    <div className="hidden lg:flex items-center justify-center border-t border-gray-100">
-                        <ul className="flex items-center gap-8 py-4">
-                            <li>
-                                <button
-                                    onClick={handleHomeClick}
-                                    className="relative text-sm font-semibold text-gray-700 hover:text-green-600 
-                                             transition-colors group"
-                                >
-                                    Home
-                                    <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-green-600 
-                                                   group-hover:w-full transition-all duration-300"></span>
-                                </button>
-                            </li>
-                            {navCategories.map((category) => (
-                                <li key={category.name}>
-                                    <button
-                                        onClick={() => handleCategoryClick(category.category)}
-                                        className="relative text-sm font-semibold text-gray-700 hover:text-green-600 
-                                                 transition-colors uppercase tracking-wide group"
-                                    >
-                                        {category.name}
-                                        <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-green-600 
-                                                       group-hover:w-full transition-all duration-300"></span>
-                                    </button>
-                                </li>
-                            ))}
-                            <li>
-                                <button
-                                    onClick={handleAboutClick}
-                                    className="relative text-sm font-semibold text-gray-700 hover:text-green-600 
-                                             transition-colors group"
-                                >
-                                    About
-                                    <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-green-600 
-                                                   group-hover:w-full transition-all duration-300"></span>
-                                </button>
-                            </li>
-                            <li>
-                                <button
-                                    onClick={handleContactClick}
-                                    className="relative text-sm font-semibold text-gray-700 hover:text-green-600 
-                                             transition-colors group"
-                                >
-                                    Contact
-                                    <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-green-600 
-                                                   group-hover:w-full transition-all duration-300"></span>
-                                </button>
-                            </li>
-                        </ul>
-                    </div>
                 </div>
 
                 {mobileMenuOpen && (

@@ -144,10 +144,25 @@ const CustomerHome = () => {
             })
             .catch((err) => {
                 console.error("Error fetching products:", err);
+                console.error("Error details:", {
+                    message: err.message,
+                    response: err.response,
+                    status: err.response?.status,
+                    data: err.response?.data
+                });
                 setAllProducts([]);
                 setFilteredProducts([]);
                 setTotalPages(0);
                 setTotalProducts(0);
+                
+                // Show error message to user
+                if (err.response?.status === 404) {
+                    error("Products endpoint not found. Please check backend configuration.");
+                } else if (!err.response) {
+                    error("Cannot connect to backend server. Please check your internet connection.");
+                } else {
+                    error("Failed to load products. Please try again later.");
+                }
             })
             .finally(() => setIsLoadingProducts(false));
     }, [currentPage, searchTerm, selectedCategory]);
