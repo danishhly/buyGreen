@@ -29,20 +29,12 @@ REM Email Configuration
 set MAIL_HOST=smtp.gmail.com
 set MAIL_PORT=587
 set MAIL_USERNAME=dnsh.1inn@gmail.com
-set MAIL_PASSWORD=curn acmo ysdz yegj
+set MAIL_PASSWORD=curnacmoysdzyegj
 
 REM Frontend URL Configuration
 set FRONTEND_URL=http://localhost:5173
 set CORS_ALLOWED_ORIGINS=http://localhost:5173
 
-REM ============================================
-REM Start the application
-REM ============================================
-echo Starting BuyGreen Backend...
-echo.
-echo Make sure you've updated all the environment variables above!
-echo.
-java -jar target/buygreen-0.0.1-SNAPSHOT.jar
 
-pause
+
 
