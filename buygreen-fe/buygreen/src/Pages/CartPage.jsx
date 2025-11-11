@@ -28,7 +28,16 @@ const CartPage = () => {
             await decrementFromCart(item.productId);
         } catch (err) {
             console.error('Failed to decrease quantity', err);
-            error('Could not decrease item quantity. Please try again.');
+            // Show more specific error message
+            const errorMessage = err.message || 'Could not decrease item quantity. Please try again.';
+            if (errorMessage.includes('Session expired') || errorMessage.includes('login')) {
+                error(errorMessage);
+                setTimeout(() => {
+                    window.location.href = '/login';
+                }, 2000);
+            } else {
+                error(errorMessage);
+            }
         }
     };
 

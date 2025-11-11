@@ -37,9 +37,18 @@ export default defineConfig({
     sourcemap: false,
     // Optimize chunk size
     chunkSizeWarningLimit: 1000,
+    // Minify and optimize
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true, // Remove console.log in production
+        drop_debugger: true,
+      },
+    },
   },
   // Optimize dependencies
   optimizeDeps: {
-    include: ['react', 'react-dom', 'react-router-dom', '@react-oauth/google', 'axios']
+    include: ['react', 'react-dom', 'react-router-dom', '@react-oauth/google', 'axios'],
+    exclude: []
   }
 })

@@ -1,5 +1,5 @@
 // src/Contexts/CartProvider.jsx
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import api from '../api/axiosConfig';
 import { CartContext } from './CartContext'; // <-- Import the context
 
@@ -13,6 +13,10 @@ export const CartProvider = ({ children }) => {
     // --- NEW WISHLIST STATE ---
     const [wishlistItems, setWishlistItems] = useState([]);
     const [isWishlistLoading, setIsWishlistLoading] = useState(false);
+
+    // Refs for preventing duplicate requests
+    const pendingDecrements = useRef(new Set());
+    const pendingIncrements = useRef(new Set());
 
     const getCustomer = () => {
         const storedCustomer = localStorage.getItem('customer');
@@ -52,6 +56,31 @@ export const CartProvider = ({ children }) => {
         const customer = getCustomer();
         if (!customer) throw new Error("User is not logged in.");
 
+        // Prevent duplicate requests
+        const requestKey = `add-${product.id}`;
+        if (pendingIncrements.current.has(requestKey)) {
+            return; // Request already in progress
+        }
+
+        // Optimistic update
+        const existingItem = cartItems.find(item => item.productId === product.id);
+        if (existingItem) {
+            setCartItems(prev => prev.map(item =>
+                item.productId === product.id
+                    ? { ...item, quantity: item.quantity + quantity }
+                    : item
+            ));
+        } else {
+            setCartItems(prev => [...prev, {
+                productId: product.id,
+                productName: product.name,
+                price: product.price,
+                quantity: quantity
+            }]);
+        }
+
+        pendingIncrements.current.add(requestKey);
+
         try {
             const response = await api.post(
                 "/cart/add",
@@ -69,10 +98,15 @@ export const CartProvider = ({ children }) => {
             if (response.data != "Item added to cart") {
                 throw new Error(response.data);
             }
-            await fetchCart(); // Refresh cart
+            // Refresh cart to get accurate data
+            await fetchCart();
         } catch (err) {
             console.error("Error adding to cart:", err);
+            // Revert optimistic update on error
+            await fetchCart();
             throw err;
+        } finally {
+            pendingIncrements.current.delete(requestKey);
         }
     };
 
@@ -80,8 +114,31 @@ export const CartProvider = ({ children }) => {
         const customer = getCustomer();
         if (!customer) throw new Error("User is not logged in.");
 
+        // Prevent duplicate requests
+        const requestKey = `dec-${productId}`;
+        if (pendingDecrements.current.has(requestKey)) {
+            return; // Request already in progress
+        }
+
+        // Optimistic update
+        const existingItem = cartItems.find(item => item.productId === productId);
+        if (existingItem) {
+            if (existingItem.quantity > 1) {
+                setCartItems(prev => prev.map(item =>
+                    item.productId === productId
+                        ? { ...item, quantity: item.quantity - 1 }
+                        : item
+                ));
+            } else {
+                // Remove item if quantity is 1
+                setCartItems(prev => prev.filter(item => item.productId !== productId));
+            }
+        }
+
+        pendingDecrements.current.add(requestKey);
+
         try {
-            await api.put(
+            const response = await api.put(
                 "/cart/decrement",
                 {
                     customerId: customer.id,
@@ -91,10 +148,23 @@ export const CartProvider = ({ children }) => {
                     headers: { 'Content-Type': 'application/json' }
                 }
             );
-            await fetchCart(); // Refresh cart
+            // Refresh cart to get accurate data
+            await fetchCart();
         } catch (err) {
             console.error("Error decrementing cart item:", err);
-            throw err;
+            // Revert optimistic update on error
+            await fetchCart();
+
+            // Provide more specific error message
+            if (err.response?.status === 403) {
+                throw new Error("Session expired. Please refresh the page and try again.");
+            } else if (err.response?.status === 401) {
+                throw new Error("Please login to continue.");
+            } else {
+                throw err;
+            }
+        } finally {
+            pendingDecrements.current.delete(requestKey);
         }
     };
 
@@ -204,15 +274,17 @@ export const CartProvider = ({ children }) => {
         console.log("Placing order with payload:", payload);
 
         try {
+            // Increase timeout for order placement
             const response = await api.post("/orders/create", payload, {
-                headers: { 'Content-Type': 'application/json' }
+                headers: { 'Content-Type': 'application/json' },
+                timeout: 60000 // 60 seconds for order placement
             });
 
             console.log("Order placed successfully:", response.data);
             console.log("Order ID:", response.data?.id);
 
             // Verify order was created successfully
-            if (!response.data || (!response.data.id && response.status !== 201)) {
+            if (!response.data || (!response.data.id && response.status !== 201 && response.status !== 200)) {
                 throw new Error("Order creation failed - invalid response from server");
             }
 
@@ -220,10 +292,10 @@ export const CartProvider = ({ children }) => {
             // Don't fail the order if cart clearing fails
             if (!orderItems) {
                 try {
-                    await fetchCart(); // Clear cart after order
+                    await fetchCart(); // Refresh cart after order
                 } catch (cartError) {
-                    console.warn("Failed to clear cart after order, but order was successful:", cartError);
-                    // Don't throw - order was successful, cart clearing is not critical
+                    console.warn("Failed to refresh cart after order, but order was successful:", cartError);
+                    // Don't throw - order was successful, cart refresh is not critical
                 }
             }
 
@@ -234,14 +306,27 @@ export const CartProvider = ({ children }) => {
             console.error("Error response:", err.response?.data);
             console.error("Error status:", err.response?.status);
 
-            // Check if it's actually a permission error or something else
+            // Provide more specific error messages
+            if (!err.response) {
+                // Network error
+                throw new Error("Network error. Please check your internet connection and try again.");
+            }
+
+            if (err.response?.status === 401) {
+                throw new Error("Session expired. Please login again.");
+            }
+
             if (err.response?.status === 403) {
                 const errorMessage = err.response?.data?.message || "You do not have permission to place orders. Please contact support.";
                 throw new Error(errorMessage);
             }
 
+            if (err.response?.status >= 500) {
+                throw new Error("Server error. Please try again in a moment.");
+            }
+
             // For other errors, provide more context
-            const errorMessage = err.response?.data?.message || err.message || "Failed to place order";
+            const errorMessage = err.response?.data?.message || err.message || "Failed to place order. Please try again.";
             throw new Error(errorMessage);
         }
     };
