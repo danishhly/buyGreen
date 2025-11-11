@@ -15,6 +15,7 @@ const PaymentPage = () => {
     const [scanProgress, setScanProgress] = useState(0);
     const [paymentSuccess, setPaymentSuccess] = useState(false);
     const [selectedPaymentApp, setSelectedPaymentApp] = useState(null);
+    const [isProcessingOrder, setIsProcessingOrder] = useState(false);
     
     // UPI IDs and payment apps
     const upiIds = [
@@ -96,6 +97,9 @@ const PaymentPage = () => {
         let orderTimeout = null;
         
         try {
+            // Set processing state to show loading
+            setIsProcessingOrder(true);
+            
             // Wait a moment to show success message
             await new Promise(resolve => setTimeout(resolve, 1500));
             
@@ -147,40 +151,76 @@ const PaymentPage = () => {
             }
             
             console.log('Order placement response:', order);
+            console.log('Order response type:', typeof order);
+            console.log('Order keys:', order ? Object.keys(order) : 'null');
             
             // Check if order was actually created - be flexible with response format
-            const orderIdValue = order?.id || order?.orderId || (order?.order && order.order.id);
+            // Backend returns Order object directly with 'id' field
+            let extractedOrder = null;
+            let orderIdValue = null;
             
-            if (order && orderIdValue) {
+            // Try multiple ways to extract the order and ID
+            if (order) {
+                // Case 1: Order is returned directly (most common)
+                if (order.id) {
+                    extractedOrder = order;
+                    orderIdValue = order.id;
+                }
+                // Case 2: Order is wrapped in 'order' property
+                else if (order.order && order.order.id) {
+                    extractedOrder = order.order;
+                    orderIdValue = order.order.id;
+                }
+                // Case 3: Order has orderId instead of id
+                else if (order.orderId) {
+                    extractedOrder = order;
+                    orderIdValue = order.orderId;
+                }
+                // Case 4: Order is an object but structure is unknown - check if it has required fields
+                else if (typeof order === 'object' && (order.customerId || order.totalAmount || order.items)) {
+                    // Order exists but might not have ID yet (shouldn't happen, but handle gracefully)
+                    console.warn('Order response has order data but no ID field:', order);
+                    extractedOrder = order;
+                    // Try to find ID in any field
+                    orderIdValue = order.id || order.orderId || order.order?.id;
+                }
+            }
+            
+            // If we found a valid order with ID, proceed with success
+            if (extractedOrder && orderIdValue) {
                 orderId = orderIdValue;
                 orderCreated = true;
                 console.log('✅ Order placed successfully with ID:', orderId);
+                
+                // Clear processing state
+                setIsProcessingOrder(false);
                 
                 // Show success message
                 success('Payment successful! Order placed.');
                 
                 // Navigate to order success page immediately
-                navigate('/order-success', { state: { order: order.order || order } });
+                navigate('/order-success', { state: { order: extractedOrder } });
                 return; // Exit early if order was successful
-            } else if (order && typeof order === 'object') {
-                // Order object exists but might have different structure
-                console.warn('Order response structure:', order);
-                // Try to extract order from response
-                const extractedOrder = order.order || order;
-                if (extractedOrder && (extractedOrder.id || extractedOrder.orderId)) {
+            }
+            
+            // If order object exists but no ID found, still try to proceed if it looks like an order
+            if (extractedOrder && !orderIdValue) {
+                console.warn('⚠️ Order response exists but no ID found. Order data:', extractedOrder);
+                // Check if order has required fields to be considered valid
+                if (extractedOrder.customerId || extractedOrder.items || extractedOrder.totalAmount) {
+                    console.log('Order has required fields, proceeding with navigation');
                     orderCreated = true;
-                    orderId = extractedOrder.id || extractedOrder.orderId;
-                    console.log('✅ Order placed successfully with ID:', orderId);
+                    setIsProcessingOrder(false);
                     success('Payment successful! Order placed.');
                     navigate('/order-success', { state: { order: extractedOrder } });
                     return;
                 }
             }
             
-            // If we get here, order structure is unexpected
-            console.error('❌ Order response structure:', order);
-            console.error('Order does not have id or orderId field');
-            throw new Error('Order was created but response format is unexpected');
+            // If we get here, order structure is completely unexpected
+            console.error('❌ Order response structure is unexpected:', order);
+            console.error('Order does not have recognizable structure');
+            throw new Error('Order was created but response format is unexpected. Please check your orders page.');
         } catch (err) {
             // Clear timeout on error
             if (orderTimeout) {
@@ -197,6 +237,22 @@ const PaymentPage = () => {
             });
             
             const errorMessage = err.message || 'Unknown error occurred';
+            const errorResponse = err.response?.data;
+            
+            // Check if order was actually created despite the error
+            // Sometimes the order is created but the response parsing fails
+            if (errorResponse && (errorResponse.id || errorResponse.orderId || (errorResponse.order && errorResponse.order.id))) {
+                console.log('✅ Order was created despite error. Extracting from error response...');
+                const errorOrder = errorResponse.order || errorResponse;
+                orderCreated = true;
+                setIsProcessingOrder(false);
+                success('Payment successful! Order placed.');
+                navigate('/order-success', { state: { order: errorOrder } });
+                return;
+            }
+            
+            // Clear processing state on error
+            setIsProcessingOrder(false);
             
             // Only show error if order was NOT created
             // If order was created but something else failed, don't show error
@@ -207,14 +263,23 @@ const PaymentPage = () => {
                     error('Payment successful but order data is invalid. Please check your cart and try again.');
                 } else if (errorMessage.includes('Network') || errorMessage.includes('timeout')) {
                     error('Payment successful but network error occurred. Your order may have been placed. Please check your orders page or contact support.');
+                } else if (errorMessage.includes('response format is unexpected')) {
+                    // Special handling for response format issues - order might still be created
+                    error('Payment successful! Your order may have been placed. Please check your orders page to confirm.');
+                    setTimeout(() => {
+                        navigate('/orders');
+                    }, 2000);
+                    return;
                 } else {
-                    error(`Payment successful but failed to place order: ${errorMessage}. Please contact support.`);
+                    error(`Payment successful but failed to place order: ${errorMessage}. Please check your orders page or contact support.`);
                 }
                 
-                // Navigate to cart so user can try again
-                setTimeout(() => {
-                    navigate('/cart');
-                }, 3000);
+                // Navigate to cart so user can try again (unless we're redirecting to orders)
+                if (!errorMessage.includes('response format is unexpected')) {
+                    setTimeout(() => {
+                        navigate('/cart');
+                    }, 3000);
+                }
             } else {
                 // Order was created successfully, but something else failed
                 // Don't show error, just log it
@@ -273,8 +338,14 @@ const PaymentPage = () => {
                             </svg>
                         </div>
                         <h2 className="text-3xl font-bold text-gray-900 mb-4">Payment Successful!</h2>
-                        <p className="text-gray-600 mb-6">Your order is being processed...</p>
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-700 mx-auto"></div>
+                        {isProcessingOrder ? (
+                            <>
+                                <p className="text-gray-600 mb-6">Placing your order...</p>
+                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-700 mx-auto"></div>
+                            </>
+                        ) : (
+                            <p className="text-gray-600 mb-6">Redirecting to order confirmation...</p>
+                        )}
                     </div>
                 ) : isScanning ? (
                     /* Scanning Animation */
