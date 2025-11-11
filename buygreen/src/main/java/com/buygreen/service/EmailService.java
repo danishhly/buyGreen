@@ -33,6 +33,14 @@ public class EmailService {
         System.out.println("From Email: " + (fromEmail != null && !fromEmail.isEmpty() ? fromEmail : "NOT SET"));
         System.out.println("Frontend URL: " + frontendUrl);
         
+        if (mailSender != null && mailSender instanceof org.springframework.mail.javamail.JavaMailSenderImpl) {
+            org.springframework.mail.javamail.JavaMailSenderImpl impl = (org.springframework.mail.javamail.JavaMailSenderImpl) mailSender;
+            System.out.println("SMTP Host: " + impl.getHost());
+            System.out.println("SMTP Port: " + impl.getPort());
+            System.out.println("SMTP Username: " + impl.getUsername());
+            System.out.println("Connection Timeout: " + impl.getJavaMailProperties().getProperty("mail.smtp.connectiontimeout", "default"));
+        }
+        
         if (mailSender == null) {
             System.err.println("ERROR: JavaMailSender is NULL! Email will not work.");
             logger.severe("JavaMailSender is null - email configuration failed");
