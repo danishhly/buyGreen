@@ -18,7 +18,14 @@ public class ProductServiceImpl  implements ProductService{
 
     @Override
     public Product addProduct(Product product) {
-        return repo.save(product);
+        Product saved = repo.save(product);
+        // Update productImages with correct productId after save
+        if (saved.getProductImages() != null && !saved.getProductImages().isEmpty()) {
+            final Long productId = saved.getId();
+            saved.getProductImages().forEach(img -> img.setProductId(productId));
+            saved = repo.save(saved);
+        }
+        return saved;
     }
 
     @Override
@@ -37,6 +44,11 @@ public class ProductServiceImpl  implements ProductService{
         existing.setImageUrls(product.getImageUrls());
         existing.setCategory(product.getCategory());
         existing.setStockQuantity(product.getStockQuantity());
+        
+        // Ensure productImages have correct productId
+        if (existing.getProductImages() != null) {
+            existing.getProductImages().forEach(img -> img.setProductId(id));
+        }
 
         return repo.save(existing);
     }
