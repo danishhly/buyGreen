@@ -11,9 +11,15 @@ const api = axios.create({
 // Request interceptor
 api.interceptors.request.use(
     (config) => {
-        const token = localStorage.getItem('authToken') || localStorage.getItem('token');
-        if (token) {
-            config.headers['Authorization'] = `Bearer ${token}`;
+        // Don't add token for public endpoints
+        const publicEndpoints = ['/login', '/signup', '/auth/google', '/forgot-password', '/reset-password'];
+        const isPublicEndpoint = publicEndpoints.some(endpoint => config.url?.includes(endpoint));
+
+        if (!isPublicEndpoint) {
+            const token = localStorage.getItem('authToken') || localStorage.getItem('token');
+            if (token) {
+                config.headers['Authorization'] = `Bearer ${token}`;
+            }
         }
         return config;
     },

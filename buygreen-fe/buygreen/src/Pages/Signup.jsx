@@ -69,10 +69,31 @@ function Signup() {
                 navigate('/login');
             }, 2000);
         } catch (err) {
-            const errorMessage = err.response?.data?.message || "Error during signup. Please try again.";
-            error(errorMessage);
-            setMessage(errorMessage);
-            console.error("Signup error:", err.response);
+            console.error("Signup error:", err);
+            console.error("Signup error response:", err.response);
+            
+            // Handle different error types
+            if (!err.response) {
+                // Network error
+                const errorMessage = "Cannot connect to server. Please check your internet connection.";
+                error(errorMessage);
+                setMessage(errorMessage);
+            } else if (err.response.status === 400) {
+                // Bad request - usually means email already exists
+                const errorMessage = err.response?.data?.message || "Email already exists. Please use a different email or try logging in.";
+                error(errorMessage);
+                setMessage(errorMessage);
+            } else if (err.response.status === 403) {
+                // Permission denied - should not happen for signup, but handle it
+                const errorMessage = "Signup is currently unavailable. Please try again later or contact support.";
+                error(errorMessage);
+                setMessage(errorMessage);
+            } else {
+                // Other errors
+                const errorMessage = err.response?.data?.message || "Error during signup. Please try again.";
+                error(errorMessage);
+                setMessage(errorMessage);
+            }
         } finally {
             setIsLoading(false);
         }
