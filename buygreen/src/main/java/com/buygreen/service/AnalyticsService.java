@@ -136,8 +136,10 @@ public class AnalyticsService {
         analytics.setActiveCustomers(activeCustomers);
 
         // New customers in last 30 days (approximation - using total customers)
-        // Note: This is a simplified version. In production, you'd want a registrationDate field
-        Long newCustomers = 0L; // Placeholder - would need registrationDate field in Customers model
+        // FIX: Use real registration data
+        LocalDateTime startDate = LocalDateTime.now().minusDays(30);
+        Long newCustomers = customerRepository.countByRegistrationDateAfter(startDate);
+        if (newCustomers == null) newCustomers = 0L;
         analytics.setNewCustomersLast30Days(newCustomers);
 
         // Total orders and revenue
@@ -165,9 +167,17 @@ public class AnalyticsService {
             customersByDate.put(date.format(formatter), 0L);
         }
         
-        // Get actual registration data (if registrationDate field exists)
-        // For now, we'll use a simple count approach
-        // This would need to be adjusted based on your Customer model
+        // FIX: Get actual registration data
+        List<Object[]> registrationData = customerRepository.findNewCustomersByDateAfter(startDate);
+        
+        // Fill in actual data
+        for (Object[] row : registrationData) {
+            // Date comes as java.sql.Date from native query
+            LocalDate date = ((java.sql.Date) row[0]).toLocalDate();
+            Long count = ((Number) row[1]).longValue();
+            customersByDate.put(date.format(formatter), count);
+        }
+
         analytics.setCustomersByRegistrationDate(customersByDate);
 
         return analytics;

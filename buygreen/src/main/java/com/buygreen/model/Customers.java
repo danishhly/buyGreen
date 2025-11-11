@@ -140,4 +140,14 @@ public class Customers implements UserDetails {
     public void setAddress(String address) {
         this.address = address;
     }
+    
+    // ADDED: Registration Date for Analytics
+    private LocalDateTime registrationDate = LocalDateTime.now(); 
+    public LocalDateTime getRegistrationDate() {
+        return registrationDate;
+    }
+
+    public void setRegistrationDate(LocalDateTime registrationDate) {
+        this.registrationDate = registrationDate;
+    }
 }

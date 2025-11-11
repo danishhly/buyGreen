@@ -84,6 +84,10 @@ public class CustomerServiceImplementation implements CustomerService, UserDetai
         //Hash the password
         //get the plain text password and encode it before saving
         customer.setPassword(passwordEncoder.encode(customer.getPassword()));
+        
+        // FIX: Set the registration date on creation
+        customer.setRegistrationDate(LocalDateTime.now());
+        
         repo.save(customer);
         return "success";
     }
@@ -104,6 +108,8 @@ public class CustomerServiceImplementation implements CustomerService, UserDetai
             customer.setName(name);
             customer.setRole("customer");
             customer.setPassword(passwordEncoder.encode("GOOGLE_USER_NO_PASSWORD"));
+            // FIX: Set the registration date on creation
+            customer.setRegistrationDate(LocalDateTime.now());
             return repo.save(customer);
         }
 

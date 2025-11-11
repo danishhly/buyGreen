@@ -5,8 +5,10 @@ import com.buygreen.dto.OrderRequest;
 import com.buygreen.model.Coupon;
 import com.buygreen.model.Order;
 import com.buygreen.model.OrderItem;
+import com.buygreen.model.Product;
 import com.buygreen.repository.CartRepository;
 import com.buygreen.repository.OrderRepository;
+import com.buygreen.repository.ProductRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,6 +37,9 @@ public class OrderService {
     
     @Autowired
     private CouponService couponService;
+    
+    @Autowired
+    private ProductRepository productRepository;
 
     @Transactional
     public Order placeOrder(OrderRequest orderRequest) {
@@ -45,18 +50,21 @@ public class OrderService {
         BigDecimal finalAmount = orderRequest.getTotalAmount();
         if (orderRequest.getCouponCode() != null && !orderRequest.getCouponCode().trim().isEmpty()) {
             try {
+                // FIX: Use validate to check eligibility, then apply to increment usage count
+                couponService.validateCoupon(orderRequest.getCouponCode(), orderRequest.getTotalAmount());
                 Coupon coupon = couponService.applyCoupon(orderRequest.getCouponCode(), orderRequest.getTotalAmount());
                 BigDecimal discount = coupon.calculateDiscount(orderRequest.getTotalAmount());
                 finalAmount = orderRequest.getTotalAmount().subtract(discount);
+                
                 order.setCouponCode(coupon.getCode());
                 order.setDiscountAmount(discount);
             } catch (Exception e) {
-                // If coupon application fails, proceed without discount
-                System.err.println("Failed to apply coupon: " + e.getMessage());
+                // If coupon validation/application fails, reject the order
+                throw new IllegalArgumentException("Invalid coupon logic or coupon not found/expired: " + e.getMessage());
             }
         }
         
-        order.setTotalAmount(finalAmount);
+        order.setTotalAmount(finalAmount); // Set final (discounted) amount
         order.setOrderDate(LocalDateTime.now());
         order.setStatus(Order.OrderStatus.PENDING);
         if (orderRequest.getShippingAddress() != null) {
@@ -86,9 +94,9 @@ public class OrderService {
             throw new IllegalArgumentException("Order must contain at least one item");
         }
 
-        // Convert cart items → order items with validation
+        // Convert cart items → order items with validation AND stock update
         List<OrderItem> orderItems = requestedItems.stream().map(item -> {
-            // Validate each item
+            // Validate mandatory item fields
             if (item.getProductId() == null) {
                 throw new IllegalArgumentException("Product ID is required for all items");
             }
@@ -102,6 +110,19 @@ public class OrderService {
                 throw new IllegalArgumentException("Product quantity must be greater than zero");
             }
             
+            // 2. CRITICAL FIX: Check and reduce stock for each item
+            Product product = productRepository.findById(item.getProductId())
+                    .orElseThrow(() -> new IllegalArgumentException("Product not found with ID: " + item.getProductId()));
+            int orderedQuantity = item.getQuantity();
+            if (product.getStockQuantity() < orderedQuantity) {
+                throw new IllegalArgumentException("Not enough stock for product " + product.getName() + 
+                                                   ". Only " + product.getStockQuantity() + " available.");
+            }
+            // Reduce stock
+            product.setStockQuantity(product.getStockQuantity() - orderedQuantity);
+            productRepository.save(product); // Save updated product stock
+            
+            // 3. Create OrderItem
             OrderItem orderItem = new OrderItem();
             orderItem.setProductId(item.getProductId());
             orderItem.setProductName(item.getProductName().trim());
