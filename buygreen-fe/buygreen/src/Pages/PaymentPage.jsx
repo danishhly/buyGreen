@@ -113,7 +113,7 @@ const PaymentPage = () => {
                     error('Order placement is taking too long. Please check your orders page or contact support.');
                     navigate('/cart');
                 }
-            }, 90000); // 90 second timeout
+            }, 30000); 
             
             // Place the order with address data, items, and amount from payment
             const order = await placeOrder(
