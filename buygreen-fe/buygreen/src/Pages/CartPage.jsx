@@ -54,14 +54,16 @@ const CartPage = () => {
         }
     };
 
-    useEffect(() => {
-        if (!window.Razorpay) {
-            const script = document.createElement('script');
-            script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-            script.async = true;
-            document.body.appendChild(script);
-        }
-    }, []);
+    // Razorpay script removed - we're using mock payment system
+    // Uncomment below if you need Razorpay in the future
+    // useEffect(() => {
+    //     if (!window.Razorpay) {
+    //         const script = document.createElement('script');
+    //         script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    //         script.async = true;
+    //         document.body.appendChild(script);
+    //     }
+    // }, []);
 
     const handleCheckout = async () => {
         if (cartItems.length === 0) {
@@ -389,7 +391,7 @@ const CartPage = () => {
                                     )}
                                 </button>
                                 <p className="text-xs text-gray-500 text-center mt-4">
-                                    Secure checkout with Razorpay
+                                    Secure checkout
                                 </p>
                             </div>
                         </div>
