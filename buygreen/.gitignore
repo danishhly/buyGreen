@@ -41,3 +41,7 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Local Configuration Files (contain secrets) ###
+start.bat
+start.sh

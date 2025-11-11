@@ -187,20 +187,32 @@ public class OrderService {
         // Send email notification if status changed (asynchronously, non-blocking)
         if (oldStatus != newStatus) {
             try {
+                System.out.println("Order status changed from " + oldStatus + " to " + newStatus + " for order #" + orderId);
                 var customer = customerService.getCustomerById(order.getCustomerId());
-                if (customer != null && customer.getEmail() != null) {
-                    // Email is sent asynchronously, so this won't block status update
-                    emailService.sendOrderStatusUpdateEmail(
-                        customer.getEmail(),
-                        updatedOrder,
-                        customer.getName()
-                    );
+                if (customer != null) {
+                    System.out.println("Customer found: " + customer.getName() + ", Email: " + customer.getEmail());
+                    if (customer.getEmail() != null && !customer.getEmail().trim().isEmpty()) {
+                        // Email is sent asynchronously, so this won't block status update
+                        System.out.println("Attempting to send email to: " + customer.getEmail());
+                        emailService.sendOrderStatusUpdateEmail(
+                            customer.getEmail(),
+                            updatedOrder,
+                            customer.getName()
+                        );
+                        System.out.println("Email send request submitted (async) for order #" + orderId);
+                    } else {
+                        System.err.println("Customer email is null or empty for customer ID: " + order.getCustomerId());
+                    }
+                } else {
+                    System.err.println("Customer not found for customer ID: " + order.getCustomerId());
                 }
             } catch (Exception e) {
                 // Log error but don't fail the status update
                 System.err.println("Failed to send order status update email: " + e.getMessage());
                 e.printStackTrace();
             }
+        } else {
+            System.out.println("Order status unchanged for order #" + orderId + " (old: " + oldStatus + ", new: " + newStatus + ")");
         }
         
         return updatedOrder;

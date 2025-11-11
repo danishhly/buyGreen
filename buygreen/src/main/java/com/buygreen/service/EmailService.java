@@ -24,8 +24,26 @@ public class EmailService {
 
     @Value("${spring.mail.username:}")
     private String fromEmail;
+    
+    // Check email configuration on startup
+    @jakarta.annotation.PostConstruct
+    public void init() {
+        System.out.println("=== EMAIL SERVICE INITIALIZATION ===");
+        System.out.println("Mail Sender: " + (mailSender != null ? "INITIALIZED" : "NULL"));
+        System.out.println("From Email: " + (fromEmail != null && !fromEmail.isEmpty() ? fromEmail : "NOT SET"));
+        System.out.println("Frontend URL: " + frontendUrl);
+        
+        if (mailSender == null) {
+            System.err.println("ERROR: JavaMailSender is NULL! Email will not work.");
+            logger.severe("JavaMailSender is null - email configuration failed");
+        } else {
+            System.out.println("Email service initialized successfully");
+            logger.info("Email service initialized - Mail Sender: " + (mailSender != null ? "OK" : "NULL"));
+        }
+        System.out.println("====================================");
+    }
 
-    @Async
+    @Async("taskExecutor")
     public void sendPasswordResetEmail(String toEmail, String token) {
         try {
             logger.info("Sending password reset email to: " + toEmail);
@@ -52,7 +70,7 @@ public class EmailService {
         }
     }
 
-    @Async
+    @Async("taskExecutor")
     public void sendOrderConfirmationEmail(String toEmail, Order order, String customerName) {
         try {
             logger.info("Sending order confirmation email to: " + toEmail + " for order #" + order.getId());
@@ -136,10 +154,29 @@ public class EmailService {
         }
     }
 
-    @Async
+    @Async("taskExecutor")
     public void sendOrderStatusUpdateEmail(String toEmail, Order order, String customerName) {
         try {
+            System.out.println("=== EMAIL SERVICE: Starting to send order status update email ===");
+            System.out.println("To: " + toEmail);
+            System.out.println("Order ID: " + order.getId());
+            System.out.println("Status: " + order.getStatus());
+            System.out.println("From Email: " + (fromEmail != null ? fromEmail : "NOT SET"));
+            System.out.println("Mail Sender: " + (mailSender != null ? "INITIALIZED" : "NULL"));
+            
             logger.info("Sending order status update email to: " + toEmail + " for order #" + order.getId() + " with status: " + order.getStatus());
+            
+            if (mailSender == null) {
+                System.err.println("ERROR: mailSender is NULL! Email configuration may be missing.");
+                logger.severe("mailSender is null - email configuration not initialized");
+                return;
+            }
+            
+            if (fromEmail == null || fromEmail.isEmpty()) {
+                System.err.println("WARNING: fromEmail is not set. Email may fail to send.");
+                logger.warning("fromEmail is not configured");
+            }
+            
             String subject = "Order Update - Order #" + order.getId();
             
             StringBuilder body = new StringBuilder();
@@ -167,11 +204,19 @@ public class EmailService {
             message.setText(body.toString());
             if (fromEmail != null && !fromEmail.isEmpty()) {
                 message.setFrom(fromEmail);
+            } else {
+                System.err.println("WARNING: Setting fromEmail to default value");
+                message.setFrom("dnsh.1inn@gmail.com");
             }
 
+            System.out.println("Attempting to send email via mailSender...");
             mailSender.send(message);
+            System.out.println("=== EMAIL SENT SUCCESSFULLY ===");
             logger.info("Order status update email sent successfully to: " + toEmail + " for order #" + order.getId());
         } catch (Exception e) {
+            System.err.println("=== EMAIL SEND FAILED ===");
+            System.err.println("Error: " + e.getMessage());
+            System.err.println("Error Class: " + e.getClass().getName());
             logger.severe("Failed to send order status update email to " + toEmail + " for order #" + order.getId() + ": " + e.getMessage());
             e.printStackTrace();
             // Don't throw - email failure shouldn't break status update
