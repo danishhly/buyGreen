@@ -35,8 +35,9 @@ set GOOGLE_CLIENT_ID=your_google_client_id_here
 
 REM Email Configuration
 REM ⚠️ SECURITY: Never commit actual email passwords to Git!
+REM Note: Port 465 (SSL) is used instead of 587 (STARTTLS) to avoid firewall issues
 set MAIL_HOST=smtp.gmail.com
-set MAIL_PORT=587
+set MAIL_PORT=465
 set MAIL_USERNAME=your_email@gmail.com
 set MAIL_PASSWORD=your_email_app_password_here
 
