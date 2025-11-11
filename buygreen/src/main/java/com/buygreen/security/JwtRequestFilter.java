@@ -74,11 +74,21 @@ public class JwtRequestFilter extends OncePerRequestFilter {
                     // that the current user is authenticated. So it passes the
                     // Spring Security Configurations successfully.
                     SecurityContextHolder.getContext().setAuthentication(authToken);
+                } else {
+                    // Token is invalid or expired - log but don't block request
+                    // Spring Security will handle authentication check
+                    logger.debug("JWT token validation failed for user: " + username);
                 }
+            } catch (ExpiredJwtException e) {
+                logger.warn("JWT Token has expired for user: " + username);
+                // Don't set authentication, let Spring Security handle it
             } catch (Exception e) {
                 logger.warn("Error loading user details: " + e.getMessage());
                 // Continue filter chain even if user loading fails
             }
+        } else if (requestTokenHeader != null && requestTokenHeader.startsWith("Bearer ")) {
+            // Token was provided but couldn't extract username (invalid token format)
+            logger.debug("JWT token provided but invalid format or expired");
         }
 
         // 4. Continue the filter chain
