@@ -85,10 +85,31 @@ function Login() {
       }, 500);
 
     } catch (err) {
-      console.error("Login error:", err.response);
-      const errorMessage = err.response?.data?.message || "Login failed. Please check your credentials.";
-      error(errorMessage);
-      setMessage(errorMessage);
+      console.error("Login error:", err);
+      console.error("Login error response:", err.response);
+
+      // Handle different error types
+      if (!err.response) {
+        // Network error
+        const errorMessage = "Cannot connect to server. Please check your internet connection.";
+        error(errorMessage);
+        setMessage(errorMessage);
+      } else if (err.response.status === 400) {
+        // Bad request - usually means user not found or invalid password
+        const errorMessage = err.response?.data?.message || "Invalid email or password. Please try again.";
+        error(errorMessage);
+        setMessage(errorMessage);
+      } else if (err.response.status === 401) {
+        // Unauthorized
+        const errorMessage = err.response?.data?.message || "Authentication failed. Please check your credentials.";
+        error(errorMessage);
+        setMessage(errorMessage);
+      } else {
+        // Other errors
+        const errorMessage = err.response?.data?.message || "Login failed. Please try again.";
+        error(errorMessage);
+        setMessage(errorMessage);
+      }
     } finally {
       setIsLoading(false);
     }
