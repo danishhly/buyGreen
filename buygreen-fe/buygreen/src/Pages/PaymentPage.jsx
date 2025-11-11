@@ -98,6 +98,13 @@ const PaymentPage = () => {
             // Wait a moment to show success message
             await new Promise(resolve => setTimeout(resolve, 1500));
             
+            console.log('Placing order with payment data:', {
+                location: paymentData.location,
+                address: paymentData.address,
+                cartItems: paymentData.cartItems?.length,
+                amount: paymentData.amount
+            });
+            
             // Place the order with address data, items, and amount from payment
             const order = await placeOrder(
                 null, 
@@ -108,11 +115,13 @@ const PaymentPage = () => {
                 paymentData.amount     // Pass the actual paid amount
             );
             
+            console.log('Order placement response:', order);
+            
             // Check if order was actually created (has an ID)
             if (order && (order.id || order.orderId)) {
                 orderId = order.id || order.orderId;
                 orderCreated = true;
-                console.log('Order placed successfully with ID:', orderId);
+                console.log('✅ Order placed successfully with ID:', orderId);
                 
                 // Show success message
                 success('Payment successful! Order placed.');
@@ -124,11 +133,19 @@ const PaymentPage = () => {
                 return; // Exit early if order was successful
             } else {
                 // Log the order object to debug
-                console.error('Order response structure:', order);
+                console.error('❌ Order response structure:', order);
+                console.error('Order does not have id or orderId field');
                 throw new Error('Order was created but response format is unexpected');
             }
         } catch (err) {
-            console.error('Failed to place order:', err);
+            console.error('❌ Failed to place order:', err);
+            console.error('Error details:', {
+                message: err.message,
+                response: err.response?.data,
+                status: err.response?.status,
+                stack: err.stack
+            });
+            
             const errorMessage = err.message || 'Unknown error occurred';
             
             // Only show error if order was NOT created
@@ -136,6 +153,8 @@ const PaymentPage = () => {
             if (!orderCreated) {
                 if (errorMessage.includes('permission') || errorMessage.includes('403')) {
                     error('Payment successful but you do not have permission to place orders. Please contact support with your payment details.');
+                } else if (errorMessage.includes('Network') || errorMessage.includes('timeout')) {
+                    error('Payment successful but network error occurred. Your order may have been placed. Please check your orders page or contact support.');
                 } else {
                     error(`Payment successful but failed to place order: ${errorMessage}. Please contact support.`);
                 }
