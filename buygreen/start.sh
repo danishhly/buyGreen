@@ -28,7 +28,7 @@ export GOOGLE_CLIENT_ID=your_google_client_id
 
 # Email Configuration
 export MAIL_HOST=smtp.gmail.com
-export MAIL_PORT=587
+export MAIL_PORT=465
 export MAIL_USERNAME=your_email@gmail.com
 export MAIL_PASSWORD=your_email_app_password
 
