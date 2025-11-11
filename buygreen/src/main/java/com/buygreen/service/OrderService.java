@@ -86,11 +86,25 @@ public class OrderService {
             throw new IllegalArgumentException("Order must contain at least one item");
         }
 
-        // Convert cart items → order items
+        // Convert cart items → order items with validation
         List<OrderItem> orderItems = requestedItems.stream().map(item -> {
+            // Validate each item
+            if (item.getProductId() == null) {
+                throw new IllegalArgumentException("Product ID is required for all items");
+            }
+            if (item.getProductName() == null || item.getProductName().trim().isEmpty()) {
+                throw new IllegalArgumentException("Product name is required for all items");
+            }
+            if (item.getPrice() == null || item.getPrice().compareTo(BigDecimal.ZERO) <= 0) {
+                throw new IllegalArgumentException("Product price must be greater than zero");
+            }
+            if (item.getQuantity() == null || item.getQuantity() <= 0) {
+                throw new IllegalArgumentException("Product quantity must be greater than zero");
+            }
+            
             OrderItem orderItem = new OrderItem();
             orderItem.setProductId(item.getProductId());
-            orderItem.setProductName(item.getProductName());
+            orderItem.setProductName(item.getProductName().trim());
             orderItem.setPrice(item.getPrice());
             orderItem.setQuantity(item.getQuantity());
             orderItem.setOrder(order);
