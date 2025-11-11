@@ -531,21 +531,69 @@ const OrderList = () => {
     const fetchOrders = async (page = 0) => {
         setIsLoading(true);
         try {
-            const response = await api.get(`/admin/orders?page=${page}&size=10`);
-            setOrders(response.data.content);
-            setCurrentPage(response.data.number);
-            setTotalPages(response.data.totalPages);
+            const response = await api.get(`/admin/orders?page=${page}&size=10`, {
+                timeout: 30000 // 30 second timeout
+            });
+
+            if (response.data && response.data.content) {
+                setOrders(response.data.content);
+                setCurrentPage(response.data.number || page);
+                setTotalPages(response.data.totalPages || 1);
+            } else {
+                console.error("Invalid response structure:", response.data);
+                setOrders([]);
+                setTotalPages(1);
+            }
         } catch (err) {
             console.error("Error fetching orders:", err);
-            error("Could not fetch orders. Make sure you are an admin.");
+            console.error("Error details:", {
+                message: err.message,
+                response: err.response?.data,
+                status: err.response?.status
+            });
+
+            // Provide more specific error messages
+            if (err.response?.status === 403) {
+                error("Access denied. Please ensure you are logged in as an admin.");
+            } else if (err.response?.status === 401) {
+                error("Session expired. Please login again.");
+                setTimeout(() => {
+                    window.location.href = '/login';
+                }, 2000);
+            } else if (!err.response) {
+                error("Network error. Please check your connection and try again.");
+            } else {
+                error("Could not fetch orders. Please try again.");
+            }
+
+            // Set empty state on error to prevent infinite loading
+            setOrders([]);
+            setTotalPages(1);
         } finally {
             setIsLoading(false);
         }
     };
 
     useEffect(() => {
+        // Fetch orders when component mounts or page changes
         fetchOrders(currentPage);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [currentPage]);
+
+    // Add a safety timeout to prevent infinite loading
+    useEffect(() => {
+        if (isLoading) {
+            const timeout = setTimeout(() => {
+                if (isLoading) {
+                    console.warn("Order fetch taking too long, stopping loading state");
+                    setIsLoading(false);
+                    error("Request timeout. Please refresh the page.");
+                }
+            }, 60000); // 60 second safety timeout
+
+            return () => clearTimeout(timeout);
+        }
+    }, [isLoading]);
 
     const handlePageChange = (newPage) => {
         setCurrentPage(newPage);
@@ -554,13 +602,45 @@ const OrderList = () => {
     const handleStatusChange = async (orderId, newStatus) => {
         setUpdatingOrderId(orderId);
         try {
-            const response = await api.put(`/admin/orders/${orderId}/status`, { status: newStatus });
-            success(`Order #${orderId} status updated to ${newStatus}`);
+            const response = await api.put(`/admin/orders/${orderId}/status`,
+                { status: newStatus },
+                {
+                    timeout: 30000 // 30 second timeout
+                }
+            );
+
+            if (response.data && response.data.message) {
+                success(`Order #${orderId} status updated to ${newStatus}`);
+            } else {
+                success(`Order #${orderId} status updated to ${newStatus}`);
+            }
+
             setSelectedStatus({ ...selectedStatus, [orderId]: '' }); // Reset dropdown
-            fetchOrders(currentPage); // Refresh orders
+            await fetchOrders(currentPage); // Refresh orders
         } catch (err) {
             console.error("Error updating order status:", err);
-            error(err.response?.data?.message || "Failed to update order status. Please try again.");
+            console.error("Error details:", {
+                message: err.message,
+                response: err.response?.data,
+                status: err.response?.status,
+                url: `/admin/orders/${orderId}/status`
+            });
+
+            // Provide more specific error messages
+            if (err.response?.status === 403) {
+                error("Access denied. You do not have permission to update order status.");
+            } else if (err.response?.status === 401) {
+                error("Session expired. Please login again.");
+                setTimeout(() => {
+                    window.location.href = '/login';
+                }, 2000);
+            } else if (err.response?.status === 404) {
+                error(`Order #${orderId} not found.`);
+            } else if (!err.response) {
+                error("Network error. Please check your connection and try again.");
+            } else {
+                error(err.response?.data?.message || "Failed to update order status. Please try again.");
+            }
         } finally {
             setUpdatingOrderId(null);
         }

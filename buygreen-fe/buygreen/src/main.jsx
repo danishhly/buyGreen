@@ -24,7 +24,10 @@ if (typeof window !== 'undefined') {
       msg.includes('otp-credentials') ||
       msg.includes('Unrecognized feature') ||
       msg.includes('Cross-Origin-Opener-Policy policy would block') ||
-      msg.includes('checkout.js')
+      msg.includes('checkout.js') ||
+      msg.includes('play() request was interrupted') ||
+      msg.includes('AbortError') ||
+      msg.includes('The play() request was interrupted')
     );
   };
   
