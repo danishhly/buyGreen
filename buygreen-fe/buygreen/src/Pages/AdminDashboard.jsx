@@ -605,7 +605,8 @@ const OrderList = () => {
             const response = await api.put(`/admin/orders/${orderId}/status`,
                 { status: newStatus },
                 {
-                    timeout: 30000 // 30 second timeout
+                    // FIX: Increase timeout from the default 30s to 60s
+                    timeout: 60000 // 60 second timeout for status update
                 }
             );
 
@@ -623,11 +624,17 @@ const OrderList = () => {
                 message: err.message,
                 response: err.response?.data,
                 status: err.response?.status,
-                url: `/admin/orders/${orderId}/status`
+                url: `/admin/orders/${orderId}/status`,
+                code: err.code,
+                timeout: err.code === 'ECONNABORTED' || err.message?.includes('timeout')
             });
 
             // Provide more specific error messages
-            if (err.response?.status === 403) {
+            if (err.code === 'ECONNABORTED' || err.message?.includes('timeout')) {
+                error("Request timed out. The order status may have been updated. Please refresh the page to check.");
+                // Refresh orders to check if status was actually updated
+                await fetchOrders(currentPage);
+            } else if (err.response?.status === 403) {
                 error("Access denied. You do not have permission to update order status.");
             } else if (err.response?.status === 401) {
                 error("Session expired. Please login again.");
