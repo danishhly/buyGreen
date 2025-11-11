@@ -1,14 +1,53 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useToast } from '../Component/Toast';
 
 const OrderSuccess = () => {
     const location = useLocation();
     const navigate = useNavigate();
+    const { error } = useToast();
     const order = location.state?.order;
 
-    if (!order) {
-        navigate('/cart', { replace: true });
-        return null;
+    // Save order to sessionStorage as backup when order is available
+    useEffect(() => {
+        if (order) {
+            try {
+                sessionStorage.setItem('lastOrder', JSON.stringify(order));
+            } catch (e) {
+                console.warn('Failed to save order to sessionStorage:', e);
+            }
+        }
+    }, [order]);
+
+    // If no order, try sessionStorage, then redirect
+    const orderToDisplay = order || (() => {
+        try {
+            const saved = sessionStorage.getItem('lastOrder');
+            return saved ? JSON.parse(saved) : null;
+        } catch {
+            return null;
+        }
+    })();
+    
+    // Redirect if no order found
+    useEffect(() => {
+        if (!orderToDisplay) {
+            error('Order information not found. Redirecting to orders page...');
+            setTimeout(() => {
+                navigate('/orders', { replace: true });
+            }, 2000);
+        }
+    }, [orderToDisplay, navigate, error]);
+    
+    if (!orderToDisplay) {
+        return (
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-700 mx-auto mb-4"></div>
+                    <p className="text-gray-600">Redirecting to orders...</p>
+                </div>
+            </div>
+        );
     }
 
     return (
@@ -30,7 +69,7 @@ const OrderSuccess = () => {
                         Thank you for your purchase. Your order has been confirmed.
                     </p>
                     <p className="text-sm text-gray-500">
-                        Order ID: <span className="font-semibold text-green-700">#{order.id}</span>
+                        Order ID: <span className="font-semibold text-green-700">#{orderToDisplay.id || orderToDisplay.orderId || 'N/A'}</span>
                     </p>
                 </div>
 
@@ -48,7 +87,7 @@ const OrderSuccess = () => {
                     </h2>
                     
                     <div className="space-y-4 mb-6">
-                        {order.items?.map((item, index) => (
+                        {orderToDisplay.items?.map((item, index) => (
                             <div key={item.id || index} className="flex justify-between items-center py-4 border-b border-gray-100 last:border-0">
                                 <div className="flex-1">
                                     <p className="text-lg font-semibold text-gray-900">{item.productName}</p>
@@ -67,20 +106,20 @@ const OrderSuccess = () => {
                     </div>
 
                     <div className="pt-6 border-t-2 border-gray-200">
-                        {order.couponCode && order.discountAmount && Number(order.discountAmount) > 0 && (
+                        {orderToDisplay.couponCode && orderToDisplay.discountAmount && Number(orderToDisplay.discountAmount) > 0 && (
                             <div className="mb-4 space-y-2">
                                 <div className="flex justify-between items-center text-sm">
                                     <span className="text-gray-600">Subtotal</span>
                                     <span className="text-gray-900 font-semibold">
-                                        ₹{(Number(order.totalAmount) + Number(order.discountAmount)).toFixed(2)}
+                                        ₹{(Number(orderToDisplay.totalAmount) + Number(orderToDisplay.discountAmount)).toFixed(2)}
                                     </span>
                                 </div>
                                 <div className="flex justify-between items-center text-sm">
                                     <span className="text-gray-600">
-                                        Discount ({order.couponCode})
+                                        Discount ({orderToDisplay.couponCode})
                                     </span>
                                     <span className="text-green-600 font-semibold">
-                                        -₹{Number(order.discountAmount).toFixed(2)}
+                                        -₹{Number(orderToDisplay.discountAmount).toFixed(2)}
                                     </span>
                                 </div>
                             </div>
@@ -88,7 +127,7 @@ const OrderSuccess = () => {
                         <div className="flex justify-between items-center">
                             <span className="text-xl font-semibold text-gray-700">Total</span>
                             <span className="text-3xl font-bold text-green-700">
-                                ₹{typeof order.totalAmount === 'number' ? order.totalAmount.toFixed(2) : parseFloat(order.totalAmount).toFixed(2)}
+                                ₹{typeof orderToDisplay.totalAmount === 'number' ? orderToDisplay.totalAmount.toFixed(2) : parseFloat(orderToDisplay.totalAmount || 0).toFixed(2)}
                             </span>
                         </div>
                     </div>

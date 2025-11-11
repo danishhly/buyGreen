@@ -37,14 +37,18 @@ const PaymentPage = () => {
         const data = location.state;
         if (!data || !data.amount || (!data.location && !data.address)) {
             error('Payment information missing. Redirecting to cart...');
-            setTimeout(() => navigate('/cart'), 2000);
+            setTimeout(() => {
+                navigate('/cart');
+            }, 2000);
             return;
         }
         
         // Validate cart items are present
         if (!data.cartItems || data.cartItems.length === 0) {
             error('Cart items missing. Redirecting to cart...');
-            setTimeout(() => navigate('/cart'), 2000);
+            setTimeout(() => {
+                navigate('/cart');
+            }, 2000);
             return;
         }
         
@@ -125,24 +129,35 @@ const PaymentPage = () => {
                 throw new Error("Some cart items are missing required information. Please refresh your cart and try again.");
             }
             
-            // Add a safety timeout to prevent infinite loading (silent - no alert)
+            // Add a safety timeout to prevent infinite loading
             orderTimeout = setTimeout(() => {
                 if (!orderCreated) {
                     console.error('Order placement timeout - redirecting to cart');
-                    // Don't show error alert, just redirect
-                    navigate('/cart');
+                    setIsProcessingOrder(false);
+                    error('Order placement is taking too long. Please check your orders page to see if the order was placed, or try again.');
+                    setTimeout(() => {
+                        navigate('/cart');
+                    }, 3000);
                 }
             }, 90000); // 90 seconds - enough time for slow networks 
             
             // Place the order with address data, items, and amount from payment
-            const order = await placeOrder(
-                null, 
-                paymentData.location, 
-                paymentData.address, 
-                paymentData.couponCode,
-                paymentData.cartItems, // Pass cart items
-                paymentData.amount     // Pass the actual paid amount
-            );
+            let order;
+            try {
+                order = await placeOrder(
+                    null, 
+                    paymentData.location, 
+                    paymentData.address, 
+                    paymentData.couponCode,
+                    paymentData.cartItems, // Pass cart items
+                    paymentData.amount     // Pass the actual paid amount
+                );
+            } catch (orderError) {
+                // If placeOrder throws, check if it's a timeout or network error
+                console.error('placeOrder function error:', orderError);
+                // Re-throw to be caught by outer catch block
+                throw orderError;
+            }
             
             // Clear timeout if order was placed successfully
             if (orderTimeout) {
@@ -198,8 +213,13 @@ const PaymentPage = () => {
                 // Show success message
                 success('Payment successful! Order placed.');
                 
-                // Navigate to order success page immediately
-                navigate('/order-success', { state: { order: extractedOrder } });
+                // Force navigation with a small delay to ensure state is set
+                setTimeout(() => {
+                    navigate('/order-success', { 
+                        state: { order: extractedOrder },
+                        replace: true 
+                    });
+                }, 100);
                 return; // Exit early if order was successful
             }
             
@@ -212,15 +232,42 @@ const PaymentPage = () => {
                     orderCreated = true;
                     setIsProcessingOrder(false);
                     success('Payment successful! Order placed.');
-                    navigate('/order-success', { state: { order: extractedOrder } });
+                    setTimeout(() => {
+                        navigate('/order-success', { 
+                            state: { order: extractedOrder },
+                            replace: true 
+                        });
+                    }, 100);
                     return;
                 }
+            }
+            
+            // If order exists but we can't parse it properly, still try to navigate
+            if (order && typeof order === 'object') {
+                console.warn('⚠️ Order response exists but structure is unclear. Attempting navigation anyway:', order);
+                orderCreated = true;
+                setIsProcessingOrder(false);
+                success('Payment successful! Order placed.');
+                setTimeout(() => {
+                    navigate('/order-success', { 
+                        state: { order: order },
+                        replace: true 
+                    });
+                }, 100);
+                return;
             }
             
             // If we get here, order structure is completely unexpected
             console.error('❌ Order response structure is unexpected:', order);
             console.error('Order does not have recognizable structure');
-            throw new Error('Order was created but response format is unexpected. Please check your orders page.');
+            // Even if we can't parse it, if we got a response, the order might have been created
+            // Redirect to orders page to let user check
+            setIsProcessingOrder(false);
+            error('Order response format is unexpected. Your order may have been placed. Redirecting to orders page to verify...');
+            setTimeout(() => {
+                navigate('/orders');
+            }, 3000);
+            return;
         } catch (err) {
             // Clear timeout on error
             if (orderTimeout) {
@@ -247,8 +294,32 @@ const PaymentPage = () => {
                 orderCreated = true;
                 setIsProcessingOrder(false);
                 success('Payment successful! Order placed.');
-                navigate('/order-success', { state: { order: errorOrder } });
+                setTimeout(() => {
+                    navigate('/order-success', { 
+                        state: { order: errorOrder },
+                        replace: true 
+                    });
+                }, 100);
                 return;
+            }
+            
+            // Also check if the error response contains order data in any format
+            if (errorResponse && typeof errorResponse === 'object') {
+                // Try to find order data in various possible locations
+                const possibleOrder = errorResponse.order || errorResponse.data || errorResponse;
+                if (possibleOrder && (possibleOrder.customerId || possibleOrder.items || possibleOrder.totalAmount)) {
+                    console.log('✅ Found order data in error response. Extracting...');
+                    orderCreated = true;
+                    setIsProcessingOrder(false);
+                    success('Payment successful! Order placed.');
+                    setTimeout(() => {
+                        navigate('/order-success', { 
+                            state: { order: possibleOrder },
+                            replace: true 
+                        });
+                    }, 100);
+                    return;
+                }
             }
             
             // Clear processing state on error
@@ -257,28 +328,49 @@ const PaymentPage = () => {
             // Only show error if order was NOT created
             // If order was created but something else failed, don't show error
             if (!orderCreated) {
-                if (errorMessage.includes('permission') || errorMessage.includes('403')) {
-                    error('Payment successful but you do not have permission to place orders. Please contact support with your payment details.');
-                } else if (errorMessage.includes('400') || errorMessage.includes('Invalid')) {
-                    error('Payment successful but order data is invalid. Please check your cart and try again.');
-                } else if (errorMessage.includes('Network') || errorMessage.includes('timeout')) {
-                    error('Payment successful but network error occurred. Your order may have been placed. Please check your orders page or contact support.');
-                } else if (errorMessage.includes('response format is unexpected')) {
-                    // Special handling for response format issues - order might still be created
-                    error('Payment successful! Your order may have been placed. Please check your orders page to confirm.');
+                // Check for timeout errors first
+                if (err.code === 'ECONNABORTED' || errorMessage.includes('timeout') || errorMessage.includes('Timeout')) {
+                    error('Request timed out. Your order may have been placed. Redirecting to orders page...');
+                    setIsProcessingOrder(false);
                     setTimeout(() => {
                         navigate('/orders');
                     }, 2000);
                     return;
-                } else {
-                    error(`Payment successful but failed to place order: ${errorMessage}. Please check your orders page or contact support.`);
                 }
                 
-                // Navigate to cart so user can try again (unless we're redirecting to orders)
-                if (!errorMessage.includes('response format is unexpected')) {
+                if (errorMessage.includes('permission') || errorMessage.includes('403')) {
+                    error('Payment successful but you do not have permission to place orders. Please contact support with your payment details. Redirecting to cart...');
                     setTimeout(() => {
                         navigate('/cart');
                     }, 3000);
+                    return;
+                } else if (errorMessage.includes('400') || errorMessage.includes('Invalid')) {
+                    error('Payment successful but order data is invalid. Please check your cart and try again. Redirecting to cart...');
+                    setTimeout(() => {
+                        navigate('/cart');
+                    }, 3000);
+                    return;
+                } else if (errorMessage.includes('Network') || errorMessage.includes('network')) {
+                    error('Payment successful but network error occurred. Your order may have been placed. Redirecting to orders page to check...');
+                    // Redirect to orders page to check if order was created
+                    setTimeout(() => {
+                        navigate('/orders');
+                    }, 3000);
+                    return;
+                } else if (errorMessage.includes('response format is unexpected')) {
+                    // Special handling for response format issues - order might still be created
+                    error('Payment successful! Your order may have been placed. Redirecting to orders page to confirm...');
+                    setTimeout(() => {
+                        navigate('/orders');
+                    }, 3000);
+                    return;
+                } else {
+                    // For any other error, assume order might have been created and redirect to orders
+                    error(`Payment successful! Your order may have been placed. Redirecting to orders page to verify...`);
+                    setTimeout(() => {
+                        navigate('/orders');
+                    }, 3000);
+                    return;
                 }
             } else {
                 // Order was created successfully, but something else failed
@@ -290,7 +382,10 @@ const PaymentPage = () => {
 
     const handleCancel = () => {
         if (window.confirm('Are you sure you want to cancel the payment?')) {
-            navigate('/cart');
+            error('Payment cancelled. Returning to cart...');
+            setTimeout(() => {
+                navigate('/cart');
+            }, 1000);
         }
     };
 
