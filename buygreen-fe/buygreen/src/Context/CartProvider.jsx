@@ -280,10 +280,13 @@ export const CartProvider = ({ children }) => {
                 throw new Error(`Invalid item: invalid quantity for ${item.productName}`);
             }
 
+            // Convert price to string to ensure proper BigDecimal conversion on backend
+            const priceValue = parseFloat(Number(item.price).toFixed(2));
+
             return {
                 productId: Number(item.productId),
                 productName: String(item.productName).trim(),
-                price: parseFloat(Number(item.price).toFixed(2)), // Ensure it's a valid number
+                price: priceValue, // Backend will convert to BigDecimal
                 quantity: parseInt(Number(item.quantity), 10) // Ensure it's an integer
             };
         });
@@ -295,7 +298,7 @@ export const CartProvider = ({ children }) => {
 
         const payload = {
             customerId: Number(customer.id),
-            totalAmount: parseFloat(Number(totalAmount).toFixed(2)), // Ensure it's a valid number
+            totalAmount: parseFloat(Number(totalAmount).toFixed(2)), // Backend will convert to BigDecimal
             items: validatedItems,
             shippingAddress: address || null,
             location: location || null,
@@ -306,6 +309,13 @@ export const CartProvider = ({ children }) => {
             pincode: addressData?.pincode || null,
             couponCode: couponCode || null
         };
+
+        // Remove null values to avoid issues
+        Object.keys(payload).forEach(key => {
+            if (payload[key] === null || payload[key] === undefined) {
+                delete payload[key];
+            }
+        });
 
         console.log("Placing order with payload:", JSON.stringify(payload, null, 2));
         console.log("Payload validation:", {
@@ -329,9 +339,19 @@ export const CartProvider = ({ children }) => {
             console.log("Order placed successfully:", response.data);
             console.log("Order ID:", response.data?.id);
 
-            // Verify order was created successfully
-            if (!response.data || (!response.data.id && response.status !== 201 && response.status !== 200)) {
-                throw new Error("Order creation failed - invalid response from server");
+            // Verify order was created successfully - be more flexible with response format
+            if (!response.data) {
+                throw new Error("Order creation failed - no response data from server");
+            }
+
+            // Check for order ID in various possible fields
+            const orderId = response.data.id || response.data.orderId || response.data.order?.id;
+            if (!orderId && response.status !== 201 && response.status !== 200) {
+                console.warn("Order response doesn't have ID but status is:", response.status);
+                // Still proceed if status is 201 or 200
+                if (response.status !== 201 && response.status !== 200) {
+                    throw new Error("Order creation failed - invalid response from server");
+                }
             }
 
             // Only clear cart if we used cart items (not provided items)
@@ -345,8 +365,21 @@ export const CartProvider = ({ children }) => {
                 }
             }
 
-            // Return the order object
-            return response.data;
+            // Return the order object - handle different response structures
+            const orderData = response.data;
+
+            // If response is wrapped, extract the order
+            if (orderData && orderData.order) {
+                return orderData.order;
+            }
+
+            // If response has message but no order, check if order was created
+            if (orderData && orderData.message && !orderData.id) {
+                console.warn("Response has message but no order ID:", orderData);
+                // Still return the data, let PaymentPage handle it
+            }
+
+            return orderData;
         } catch (err) {
             console.error("Order placement error:", err);
             console.error("Error response:", err.response?.data);

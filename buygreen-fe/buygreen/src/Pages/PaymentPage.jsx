@@ -121,14 +121,14 @@ const PaymentPage = () => {
                 throw new Error("Some cart items are missing required information. Please refresh your cart and try again.");
             }
             
-            // Add a safety timeout to prevent infinite loading
+            // Add a safety timeout to prevent infinite loading (silent - no alert)
             orderTimeout = setTimeout(() => {
                 if (!orderCreated) {
                     console.error('Order placement timeout - redirecting to cart');
-                    error('Order placement is taking too long. Please check your orders page or contact support.');
+                    // Don't show error alert, just redirect
                     navigate('/cart');
                 }
-            }, 30000); 
+            }, 90000); // 90 seconds - enough time for slow networks 
             
             // Place the order with address data, items, and amount from payment
             const order = await placeOrder(
@@ -148,26 +148,39 @@ const PaymentPage = () => {
             
             console.log('Order placement response:', order);
             
-            // Check if order was actually created (has an ID)
-            if (order && (order.id || order.orderId)) {
-                orderId = order.id || order.orderId;
+            // Check if order was actually created - be flexible with response format
+            const orderIdValue = order?.id || order?.orderId || (order?.order && order.order.id);
+            
+            if (order && orderIdValue) {
+                orderId = orderIdValue;
                 orderCreated = true;
                 console.log('✅ Order placed successfully with ID:', orderId);
                 
                 // Show success message
                 success('Payment successful! Order placed.');
                 
-                // Navigate to order success page after a short delay
-                setTimeout(() => {
-                    navigate('/order-success', { state: { order } });
-                }, 1000);
+                // Navigate to order success page immediately
+                navigate('/order-success', { state: { order: order.order || order } });
                 return; // Exit early if order was successful
-            } else {
-                // Log the order object to debug
-                console.error('❌ Order response structure:', order);
-                console.error('Order does not have id or orderId field');
-                throw new Error('Order was created but response format is unexpected');
+            } else if (order && typeof order === 'object') {
+                // Order object exists but might have different structure
+                console.warn('Order response structure:', order);
+                // Try to extract order from response
+                const extractedOrder = order.order || order;
+                if (extractedOrder && (extractedOrder.id || extractedOrder.orderId)) {
+                    orderCreated = true;
+                    orderId = extractedOrder.id || extractedOrder.orderId;
+                    console.log('✅ Order placed successfully with ID:', orderId);
+                    success('Payment successful! Order placed.');
+                    navigate('/order-success', { state: { order: extractedOrder } });
+                    return;
+                }
             }
+            
+            // If we get here, order structure is unexpected
+            console.error('❌ Order response structure:', order);
+            console.error('Order does not have id or orderId field');
+            throw new Error('Order was created but response format is unexpected');
         } catch (err) {
             // Clear timeout on error
             if (orderTimeout) {

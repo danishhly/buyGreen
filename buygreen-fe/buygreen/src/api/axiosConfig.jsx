@@ -58,7 +58,8 @@ api.interceptors.response.use(
         const config = error.config;
 
         // Retry logic for network errors and 5xx errors
-        if (isRetryableError(error) && config && config._retryCount < MAX_RETRIES) {
+        // Don't retry on 400 errors (bad request) - these are validation errors
+        if (isRetryableError(error) && config && config._retryCount < MAX_RETRIES && error.response?.status !== 400) {
             config._retryCount += 1;
 
             // Wait before retrying
