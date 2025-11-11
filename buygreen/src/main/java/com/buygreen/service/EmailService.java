@@ -210,9 +210,37 @@ public class EmailService {
             }
 
             System.out.println("Attempting to send email via mailSender...");
-            mailSender.send(message);
-            System.out.println("=== EMAIL SENT SUCCESSFULLY ===");
-            logger.info("Order status update email sent successfully to: " + toEmail + " for order #" + order.getId());
+            System.out.println("Email Details:");
+            System.out.println("  From: " + message.getFrom());
+            System.out.println("  To: " + String.join(", ", message.getTo()));
+            System.out.println("  Subject: " + message.getSubject());
+            
+            try {
+                mailSender.send(message);
+                System.out.println("=== EMAIL SENT SUCCESSFULLY ===");
+                logger.info("Order status update email sent successfully to: " + toEmail + " for order #" + order.getId());
+            } catch (org.springframework.mail.MailAuthenticationException e) {
+                System.err.println("=== EMAIL AUTHENTICATION FAILED ===");
+                System.err.println("This usually means:");
+                System.err.println("  1. Wrong email password (not using App Password)");
+                System.err.println("  2. MAIL_USERNAME or MAIL_PASSWORD not set correctly");
+                System.err.println("  3. Gmail account security settings blocking the connection");
+                throw e;
+            } catch (org.springframework.mail.MailSendException e) {
+                System.err.println("=== EMAIL SEND EXCEPTION ===");
+                System.err.println("Error details: " + e.getMessage());
+                if (e.getFailedMessages() != null && !e.getFailedMessages().isEmpty()) {
+                    e.getFailedMessages().forEach((address, exception) -> {
+                        System.err.println("Failed to send to " + address + ": " + exception.getMessage());
+                    });
+                }
+                throw e;
+            } catch (Exception e) {
+                System.err.println("=== UNEXPECTED EMAIL ERROR ===");
+                System.err.println("Error: " + e.getMessage());
+                System.err.println("Error Type: " + e.getClass().getName());
+                throw e;
+            }
         } catch (Exception e) {
             System.err.println("=== EMAIL SEND FAILED ===");
             System.err.println("Error: " + e.getMessage());

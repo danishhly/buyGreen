@@ -164,6 +164,9 @@ public class AdminController {
 
     @Autowired
     private com.buygreen.service.InventoryService inventoryService;
+    
+    @Autowired
+    private com.buygreen.service.EmailService emailService;
 
     @GetMapping("/analytics/sales")
     public ResponseEntity<?> getSalesAnalytics() {
@@ -189,6 +192,36 @@ public class AdminController {
             return ResponseEntity.ok(inventoryService.getInventoryAlerts());
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(Map.of("message", "Failed to fetch inventory alerts: " + e.getMessage()));
+        }
+    }
+    
+    // Test email endpoint for debugging
+    @PostMapping("/test-email")
+    public ResponseEntity<?> testEmail(@RequestBody Map<String, String> request) {
+        try {
+            String toEmail = request.get("email");
+            if (toEmail == null || toEmail.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("message", "Email address is required"));
+            }
+            
+            // Create a simple test order object
+            Order testOrder = new Order();
+            testOrder.setId(999L);
+            testOrder.setStatus(Order.OrderStatus.CONFIRMED);
+            testOrder.setTotalAmount(java.math.BigDecimal.valueOf(100.00));
+            
+            // Send test email
+            emailService.sendOrderStatusUpdateEmail(toEmail, testOrder, "Test User");
+            
+            return ResponseEntity.ok(Map.of(
+                "message", "Test email sent successfully. Check your inbox and spam folder.",
+                "to", toEmail
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                "message", "Failed to send test email: " + e.getMessage(),
+                "error", e.getClass().getName()
+            ));
         }
     }
 }
