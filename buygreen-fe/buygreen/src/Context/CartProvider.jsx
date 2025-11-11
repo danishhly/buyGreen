@@ -236,15 +236,27 @@ export const CartProvider = ({ children }) => {
         if (!customer) throw new Error("User is not logged in.");
 
         // Use provided items and amount, or fall back to cart items
-        const itemsToOrder = orderItems || cartItems;
-        const totalAmount = orderAmount !== null ? orderAmount : itemsToOrder.reduce((sum, item) => {
-            return sum + (item.price * item.quantity);
-        }, 0);
+        let itemsToOrder = orderItems || cartItems;
+
+        // If provided items are invalid, fall back to current cart
+        if (orderItems && (!Array.isArray(orderItems) || orderItems.length === 0)) {
+            console.warn("Provided orderItems are invalid, using current cart items");
+            itemsToOrder = cartItems;
+        }
 
         // Validate that we have items to order
         if (!itemsToOrder || itemsToOrder.length === 0) {
             throw new Error("No items to order. Cart is empty.");
         }
+
+        // Calculate total amount
+        const calculatedAmount = itemsToOrder.reduce((sum, item) => {
+            const itemPrice = Number(item.price) || 0;
+            const itemQuantity = Number(item.quantity) || 0;
+            return sum + (itemPrice * itemQuantity);
+        }, 0);
+
+        const totalAmount = orderAmount !== null && orderAmount > 0 ? orderAmount : calculatedAmount;
 
         // Get shipping address from customer profile if not provided
         let address = shippingAddress;
@@ -252,15 +264,39 @@ export const CartProvider = ({ children }) => {
             address = customer.address;
         }
 
+        // Validate and prepare items
+        const validatedItems = itemsToOrder.map(item => {
+            // Ensure all required fields are present and valid
+            if (!item.productId) {
+                throw new Error(`Invalid item: missing productId for ${item.productName || 'unknown product'}`);
+            }
+            if (!item.productName) {
+                throw new Error(`Invalid item: missing productName for product ${item.productId}`);
+            }
+            if (!item.price || isNaN(item.price) || item.price <= 0) {
+                throw new Error(`Invalid item: invalid price for ${item.productName}`);
+            }
+            if (!item.quantity || isNaN(item.quantity) || item.quantity <= 0) {
+                throw new Error(`Invalid item: invalid quantity for ${item.productName}`);
+            }
+
+            return {
+                productId: Number(item.productId),
+                productName: String(item.productName).trim(),
+                price: parseFloat(Number(item.price).toFixed(2)), // Ensure it's a valid number
+                quantity: parseInt(Number(item.quantity), 10) // Ensure it's an integer
+            };
+        });
+
+        // Validate total amount
+        if (!totalAmount || isNaN(totalAmount) || totalAmount <= 0) {
+            throw new Error("Invalid total amount. Please check your cart.");
+        }
+
         const payload = {
             customerId: Number(customer.id),
-            totalAmount: Number(totalAmount.toFixed(2)), // Ensure it's a number with 2 decimal places
-            items: itemsToOrder.map(item => ({
-                productId: item.productId,
-                productName: item.productName,
-                price: Number(item.price),
-                quantity: Number(item.quantity)
-            })),
+            totalAmount: parseFloat(Number(totalAmount).toFixed(2)), // Ensure it's a valid number
+            items: validatedItems,
             shippingAddress: address || null,
             location: location || null,
             street: addressData?.street || null,
@@ -271,7 +307,17 @@ export const CartProvider = ({ children }) => {
             couponCode: couponCode || null
         };
 
-        console.log("Placing order with payload:", payload);
+        console.log("Placing order with payload:", JSON.stringify(payload, null, 2));
+        console.log("Payload validation:", {
+            customerId: typeof payload.customerId,
+            totalAmount: typeof payload.totalAmount,
+            itemsCount: payload.items.length,
+            items: payload.items.map(i => ({
+                productId: typeof i.productId,
+                price: typeof i.price,
+                quantity: typeof i.quantity
+            }))
+        });
 
         try {
             // Increase timeout for order placement
@@ -323,10 +369,20 @@ export const CartProvider = ({ children }) => {
 
             if (err.response?.status === 400) {
                 // Bad Request - usually means invalid payload
-                const errorMessage = err.response?.data?.message || "Invalid order data. Please check your cart and try again.";
-                console.error("400 Bad Request - Order payload:", payload);
-                console.error("400 Bad Request - Error details:", err.response?.data);
-                throw new Error(errorMessage);
+                const errorMessage = err.response?.data?.message || err.response?.data?.error || "Invalid order data. Please check your cart and try again.";
+                console.error("400 Bad Request - Order payload:", JSON.stringify(payload, null, 2));
+                console.error("400 Bad Request - Error response:", err.response?.data);
+                console.error("400 Bad Request - Full error:", err);
+
+                // Try to provide more specific error message
+                let specificError = errorMessage;
+                if (err.response?.data?.errors) {
+                    specificError = `Validation errors: ${JSON.stringify(err.response.data.errors)}`;
+                } else if (err.response?.data?.details) {
+                    specificError = `Error details: ${JSON.stringify(err.response.data.details)}`;
+                }
+
+                throw new Error(specificError);
             }
 
             if (err.response?.status >= 500) {

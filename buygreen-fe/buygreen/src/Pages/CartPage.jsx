@@ -80,6 +80,14 @@ const CartPage = () => {
         // Calculate total amount
         const totalAmount = subtotal - discount;
         
+        // Ensure cart items have all required fields before navigating
+        const validatedCartItems = cartItems.map(item => ({
+            productId: item.productId,
+            productName: item.productName,
+            price: Number(item.price),
+            quantity: Number(item.quantity)
+        }));
+        
         // Navigate to payment page with payment data
         navigate('/payment', {
             state: {
@@ -87,7 +95,7 @@ const CartPage = () => {
                 location: location.trim() || `${address.city}, ${address.state}`,
                 address: address,
                 couponCode: appliedCoupon?.code || null,
-                cartItems: cartItems // Pass cart items for order creation
+                cartItems: validatedCartItems // Pass validated cart items for order creation
             }
         });
     };
@@ -129,6 +137,14 @@ const CartPage = () => {
 
         setShowLocationModal(false);
         
+        // Ensure cart items have all required fields before navigating
+        const validatedCartItems = cartItems.map(item => ({
+            productId: item.productId,
+            productName: item.productName,
+            price: Number(item.price),
+            quantity: Number(item.quantity)
+        }));
+        
         // Calculate total amount and navigate to payment page
         const totalAmount = subtotal - discount;
         navigate('/payment', {
@@ -137,7 +153,7 @@ const CartPage = () => {
                 location: location.trim() || `${address.city}, ${address.state}`,
                 address: address,
                 couponCode: appliedCoupon?.code || null,
-                cartItems: cartItems // Pass cart items for order creation
+                cartItems: validatedCartItems // Pass validated cart items for order creation
             }
         });
     };

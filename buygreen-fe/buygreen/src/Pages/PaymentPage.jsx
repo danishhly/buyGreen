@@ -103,8 +103,23 @@ const PaymentPage = () => {
                 location: paymentData.location,
                 address: paymentData.address,
                 cartItems: paymentData.cartItems?.length,
+                cartItemsData: paymentData.cartItems,
                 amount: paymentData.amount
             });
+            
+            // Validate cart items structure before placing order
+            if (!paymentData.cartItems || !Array.isArray(paymentData.cartItems) || paymentData.cartItems.length === 0) {
+                throw new Error("Cart items are missing or invalid. Please go back to cart and try again.");
+            }
+            
+            // Validate each cart item has required fields
+            const invalidItems = paymentData.cartItems.filter(item => 
+                !item.productId || !item.productName || !item.price || !item.quantity
+            );
+            if (invalidItems.length > 0) {
+                console.error("Invalid cart items:", invalidItems);
+                throw new Error("Some cart items are missing required information. Please refresh your cart and try again.");
+            }
             
             // Add a safety timeout to prevent infinite loading
             orderTimeout = setTimeout(() => {
