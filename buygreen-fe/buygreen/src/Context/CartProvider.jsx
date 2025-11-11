@@ -321,6 +321,14 @@ export const CartProvider = ({ children }) => {
                 throw new Error(errorMessage);
             }
 
+            if (err.response?.status === 400) {
+                // Bad Request - usually means invalid payload
+                const errorMessage = err.response?.data?.message || "Invalid order data. Please check your cart and try again.";
+                console.error("400 Bad Request - Order payload:", payload);
+                console.error("400 Bad Request - Error details:", err.response?.data);
+                throw new Error(errorMessage);
+            }
+
             if (err.response?.status >= 500) {
                 throw new Error("Server error. Please try again in a moment.");
             }

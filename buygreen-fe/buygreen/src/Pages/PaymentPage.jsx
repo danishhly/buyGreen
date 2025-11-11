@@ -93,6 +93,7 @@ const PaymentPage = () => {
     const handlePaymentSuccess = async () => {
         let orderCreated = false;
         let orderId = null;
+        let orderTimeout = null;
         
         try {
             // Wait a moment to show success message
@@ -105,6 +106,15 @@ const PaymentPage = () => {
                 amount: paymentData.amount
             });
             
+            // Add a safety timeout to prevent infinite loading
+            orderTimeout = setTimeout(() => {
+                if (!orderCreated) {
+                    console.error('Order placement timeout - redirecting to cart');
+                    error('Order placement is taking too long. Please check your orders page or contact support.');
+                    navigate('/cart');
+                }
+            }, 90000); // 90 second timeout
+            
             // Place the order with address data, items, and amount from payment
             const order = await placeOrder(
                 null, 
@@ -114,6 +124,12 @@ const PaymentPage = () => {
                 paymentData.cartItems, // Pass cart items
                 paymentData.amount     // Pass the actual paid amount
             );
+            
+            // Clear timeout if order was placed successfully
+            if (orderTimeout) {
+                clearTimeout(orderTimeout);
+                orderTimeout = null;
+            }
             
             console.log('Order placement response:', order);
             
@@ -138,6 +154,12 @@ const PaymentPage = () => {
                 throw new Error('Order was created but response format is unexpected');
             }
         } catch (err) {
+            // Clear timeout on error
+            if (orderTimeout) {
+                clearTimeout(orderTimeout);
+                orderTimeout = null;
+            }
+            
             console.error('❌ Failed to place order:', err);
             console.error('Error details:', {
                 message: err.message,
@@ -153,6 +175,8 @@ const PaymentPage = () => {
             if (!orderCreated) {
                 if (errorMessage.includes('permission') || errorMessage.includes('403')) {
                     error('Payment successful but you do not have permission to place orders. Please contact support with your payment details.');
+                } else if (errorMessage.includes('400') || errorMessage.includes('Invalid')) {
+                    error('Payment successful but order data is invalid. Please check your cart and try again.');
                 } else if (errorMessage.includes('Network') || errorMessage.includes('timeout')) {
                     error('Payment successful but network error occurred. Your order may have been placed. Please check your orders page or contact support.');
                 } else {

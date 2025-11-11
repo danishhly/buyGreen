@@ -65,6 +65,23 @@ if (typeof window !== 'undefined') {
     }
   }, true); // Use capture phase to catch early
   
+  // Also suppress errors from third-party scripts loaded dynamically
+  const originalAddEventListener = window.addEventListener;
+  window.addEventListener = function(type, listener, options) {
+    if (type === 'error') {
+      const wrappedListener = function(event) {
+        if (event.message && shouldSuppress(event.message)) {
+          event.preventDefault();
+          event.stopPropagation();
+          return false;
+        }
+        return listener.apply(this, arguments);
+      };
+      return originalAddEventListener.call(this, type, wrappedListener, options);
+    }
+    return originalAddEventListener.call(this, type, listener, options);
+  };
+  
   // Intercept unhandled promise rejections that might log warnings
   window.addEventListener('unhandledrejection', (event) => {
     if (event.reason && shouldSuppress(event.reason.toString())) {
