@@ -138,10 +138,11 @@ public class OrderService {
         // Clear cart after successful order
         cartRepository.deleteByCustomerId(orderRequest.getCustomerId());
 
-        // Send order confirmation email
+        // Send order confirmation email asynchronously (non-blocking)
         try {
             var customer = customerService.getCustomerById(orderRequest.getCustomerId());
             if (customer != null && customer.getEmail() != null) {
+                // Email is sent asynchronously, so this won't block order creation
                 emailService.sendOrderConfirmationEmail(
                     customer.getEmail(),
                     savedOrder,
@@ -151,6 +152,7 @@ public class OrderService {
         } catch (Exception e) {
             // Log error but don't fail the order placement
             System.err.println("Failed to send order confirmation email: " + e.getMessage());
+            e.printStackTrace();
         }
 
         return savedOrder;
@@ -182,11 +184,12 @@ public class OrderService {
         
         Order updatedOrder = orderRepository.save(order);
         
-        // Send email notification if status changed
+        // Send email notification if status changed (asynchronously, non-blocking)
         if (oldStatus != newStatus) {
             try {
                 var customer = customerService.getCustomerById(order.getCustomerId());
                 if (customer != null && customer.getEmail() != null) {
+                    // Email is sent asynchronously, so this won't block status update
                     emailService.sendOrderStatusUpdateEmail(
                         customer.getEmail(),
                         updatedOrder,
@@ -196,6 +199,7 @@ public class OrderService {
             } catch (Exception e) {
                 // Log error but don't fail the status update
                 System.err.println("Failed to send order status update email: " + e.getMessage());
+                e.printStackTrace();
             }
         }
         
