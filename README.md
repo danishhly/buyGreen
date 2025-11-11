@@ -48,7 +48,7 @@ Set these in `start.bat` / `start.sh` or as environment variables:
 
 - **Frontend:** Vercel (see `buygreen-fe/vercel.json`)
 - **Backend:** Render (Docker)
-- **Database:** Railway MySQL
+- **Database:** Aiven MySQL
 
 See deployment guides in the project root for detailed setup.
 
