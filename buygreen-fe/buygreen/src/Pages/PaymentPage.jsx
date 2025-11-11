@@ -8,7 +8,81 @@ const PaymentPage = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const { success, error } = useToast();
-    const { placeOrder } = useCart();
+    const { placeOrder, fetchOrders } = useCart();
+    
+    // Helper to get customer from localStorage
+    const getCustomer = () => {
+        const storedCustomer = localStorage.getItem('customer');
+        if (!storedCustomer) return null;
+        try {
+            return JSON.parse(storedCustomer);
+        } catch {
+            return null;
+        }
+    };
+    
+    // Helper to check if order was created by fetching orders
+    const checkIfOrderWasCreated = async (expectedAmount) => {
+        try {
+            const customer = getCustomer();
+            if (!customer || !customer.id) {
+                console.warn('Cannot check for order: customer not found');
+                return null;
+            }
+            
+            console.log('Checking if order was created for amount:', expectedAmount);
+            const orders = await fetchOrders();
+            
+            if (!orders || !Array.isArray(orders) || orders.length === 0) {
+                console.log('No orders found for customer');
+                return null;
+            }
+            
+            // Sort orders by date (newest first) to get the most recent
+            const sortedOrders = [...orders].sort((a, b) => {
+                const dateA = new Date(a.orderDate || a.order_date || 0);
+                const dateB = new Date(b.orderDate || b.order_date || 0);
+                return dateB - dateA; // Newest first
+            });
+            
+            const latestOrder = sortedOrders[0];
+            console.log('Latest order found:', latestOrder);
+            
+            // Check if this order matches our payment (same amount, recent timestamp)
+            if (latestOrder && latestOrder.totalAmount) {
+                const orderAmount = Number(latestOrder.totalAmount);
+                const expected = Number(expectedAmount);
+                
+                console.log('Comparing amounts - Order:', orderAmount, 'Expected:', expected);
+                
+                // Check if amounts match (within 0.01 tolerance for rounding)
+                if (Math.abs(orderAmount - expected) < 0.01) {
+                    // Check if order was created in the last 5 minutes (increased from 2)
+                    const orderDate = new Date(latestOrder.orderDate || latestOrder.order_date);
+                    const now = new Date();
+                    const diffMinutes = (now - orderDate) / (1000 * 60);
+                    
+                    console.log('Order date:', orderDate, 'Diff minutes:', diffMinutes);
+                    
+                    if (diffMinutes < 5) {
+                        console.log('✅ Found matching order created recently:', latestOrder);
+                        return latestOrder;
+                    } else {
+                        console.log('Order found but too old:', diffMinutes, 'minutes');
+                    }
+                } else {
+                    console.log('Amount mismatch - Order:', orderAmount, 'Expected:', expected, 'Diff:', Math.abs(orderAmount - expected));
+                }
+            } else {
+                console.log('Latest order missing totalAmount:', latestOrder);
+            }
+            
+            return null;
+        } catch (err) {
+            console.error('Error checking for created order:', err);
+            return null;
+        }
+    };
     
     const [paymentData, setPaymentData] = useState(null);
     const [isScanning, setIsScanning] = useState(false);
@@ -130,16 +204,33 @@ const PaymentPage = () => {
             }
             
             // Add a safety timeout to prevent infinite loading
-            orderTimeout = setTimeout(() => {
+            orderTimeout = setTimeout(async () => {
                 if (!orderCreated) {
-                    console.error('Order placement timeout - redirecting to cart');
+                    console.error('Order placement timeout - checking if order was created...');
                     setIsProcessingOrder(false);
-                    error('Order placement is taking too long. Please check your orders page to see if the order was placed, or try again.');
-                    setTimeout(() => {
-                        navigate('/cart');
-                    }, 3000);
+                    
+                    // Check if order was actually created despite timeout
+                    const createdOrder = await checkIfOrderWasCreated(paymentData.amount);
+                    
+                    if (createdOrder) {
+                        // Order was created! Redirect to success page
+                        console.log('✅ Order was created despite timeout. Redirecting to success page...');
+                        success('Order placed successfully! Redirecting to confirmation...');
+                        setTimeout(() => {
+                            navigate('/order-success', { 
+                                state: { order: createdOrder },
+                                replace: true 
+                            });
+                        }, 1000);
+                    } else {
+                        // Order was not created, show error and redirect to cart
+                        error('Order placement is taking too long. Please check your orders page to see if the order was placed, or try again.');
+                        setTimeout(() => {
+                            navigate('/cart');
+                        }, 3000);
+                    }
                 }
-            }, 90000); // 90 seconds - enough time for slow networks 
+            }, 60000); // 60 seconds - reduced from 90 to check sooner 
             
             // Place the order with address data, items, and amount from payment
             let order;
@@ -155,8 +246,35 @@ const PaymentPage = () => {
             } catch (orderError) {
                 // If placeOrder throws, check if it's a timeout or network error
                 console.error('placeOrder function error:', orderError);
-                // Re-throw to be caught by outer catch block
-                throw orderError;
+                
+                // Before re-throwing, check if order was actually created
+                // Sometimes the order is created but the response fails
+                if (orderError.code === 'ECONNABORTED' || orderError.message?.includes('timeout')) {
+                    console.log('Timeout occurred, checking if order was created...');
+                    const createdOrder = await checkIfOrderWasCreated(paymentData.amount);
+                    if (createdOrder) {
+                        // Order was created! Don't throw error, use the created order
+                        console.log('✅ Order was created despite timeout. Using created order...');
+                        order = createdOrder;
+                        orderCreated = true;
+                    } else {
+                        // Re-throw to be caught by outer catch block
+                        throw orderError;
+                    }
+                } else {
+                    // For non-timeout errors, still check if order was created
+                    console.log('Error occurred, checking if order was created...');
+                    const createdOrder = await checkIfOrderWasCreated(paymentData.amount);
+                    if (createdOrder) {
+                        // Order was created! Don't throw error, use the created order
+                        console.log('✅ Order was created despite error. Using created order...');
+                        order = createdOrder;
+                        orderCreated = true;
+                    } else {
+                        // Re-throw to be caught by outer catch block
+                        throw orderError;
+                    }
+                }
             }
             
             // Clear timeout if order was placed successfully
@@ -261,12 +379,30 @@ const PaymentPage = () => {
             console.error('❌ Order response structure is unexpected:', order);
             console.error('Order does not have recognizable structure');
             // Even if we can't parse it, if we got a response, the order might have been created
-            // Redirect to orders page to let user check
+            // Check if order was actually created
             setIsProcessingOrder(false);
-            error('Order response format is unexpected. Your order may have been placed. Redirecting to orders page to verify...');
-            setTimeout(() => {
-                navigate('/orders');
-            }, 3000);
+            error('Response format is unexpected. Checking if your order was placed...');
+            
+            // Check if order was actually created despite parsing failure
+            const createdOrder = await checkIfOrderWasCreated(paymentData.amount);
+            
+            if (createdOrder) {
+                // Order was created! Redirect to success page
+                console.log('✅ Order was created despite parsing failure. Redirecting to success page...');
+                success('Order placed successfully! Redirecting to confirmation...');
+                setTimeout(() => {
+                    navigate('/order-success', { 
+                        state: { order: createdOrder },
+                        replace: true 
+                    });
+                }, 1000);
+            } else {
+                // Order was not created, redirect to orders page to check
+                error('Order response format is unexpected. Your order may have been placed. Redirecting to orders page to verify...');
+                setTimeout(() => {
+                    navigate('/orders');
+                }, 3000);
+            }
             return;
         } catch (err) {
             // Clear timeout on error
@@ -330,11 +466,29 @@ const PaymentPage = () => {
             if (!orderCreated) {
                 // Check for timeout errors first
                 if (err.code === 'ECONNABORTED' || errorMessage.includes('timeout') || errorMessage.includes('Timeout')) {
-                    error('Request timed out. Your order may have been placed. Redirecting to orders page...');
                     setIsProcessingOrder(false);
-                    setTimeout(() => {
-                        navigate('/orders');
-                    }, 2000);
+                    error('Request timed out. Checking if your order was placed...');
+                    
+                    // Check if order was actually created despite timeout
+                    const createdOrder = await checkIfOrderWasCreated(paymentData.amount);
+                    
+                    if (createdOrder) {
+                        // Order was created! Redirect to success page
+                        console.log('✅ Order was created despite timeout. Redirecting to success page...');
+                        success('Order placed successfully! Redirecting to confirmation...');
+                        setTimeout(() => {
+                            navigate('/order-success', { 
+                                state: { order: createdOrder },
+                                replace: true 
+                            });
+                        }, 1000);
+                    } else {
+                        // Order was not created, redirect to orders page to check
+                        error('Request timed out. Your order may have been placed. Redirecting to orders page...');
+                        setTimeout(() => {
+                            navigate('/orders');
+                        }, 2000);
+                    }
                     return;
                 }
                 
@@ -351,25 +505,79 @@ const PaymentPage = () => {
                     }, 3000);
                     return;
                 } else if (errorMessage.includes('Network') || errorMessage.includes('network')) {
-                    error('Payment successful but network error occurred. Your order may have been placed. Redirecting to orders page to check...');
-                    // Redirect to orders page to check if order was created
-                    setTimeout(() => {
-                        navigate('/orders');
-                    }, 3000);
+                    setIsProcessingOrder(false);
+                    error('Network error occurred. Checking if your order was placed...');
+                    
+                    // Check if order was actually created despite network error
+                    const createdOrder = await checkIfOrderWasCreated(paymentData.amount);
+                    
+                    if (createdOrder) {
+                        // Order was created! Redirect to success page
+                        console.log('✅ Order was created despite network error. Redirecting to success page...');
+                        success('Order placed successfully! Redirecting to confirmation...');
+                        setTimeout(() => {
+                            navigate('/order-success', { 
+                                state: { order: createdOrder },
+                                replace: true 
+                            });
+                        }, 1000);
+                    } else {
+                        // Order was not created, redirect to orders page to check
+                        error('Network error occurred. Your order may have been placed. Redirecting to orders page to check...');
+                        setTimeout(() => {
+                            navigate('/orders');
+                        }, 2000);
+                    }
                     return;
                 } else if (errorMessage.includes('response format is unexpected')) {
-                    // Special handling for response format issues - order might still be created
-                    error('Payment successful! Your order may have been placed. Redirecting to orders page to confirm...');
-                    setTimeout(() => {
-                        navigate('/orders');
-                    }, 3000);
+                    setIsProcessingOrder(false);
+                    error('Response format issue. Checking if your order was placed...');
+                    
+                    // Check if order was actually created despite response format issue
+                    const createdOrder = await checkIfOrderWasCreated(paymentData.amount);
+                    
+                    if (createdOrder) {
+                        // Order was created! Redirect to success page
+                        console.log('✅ Order was created despite response format issue. Redirecting to success page...');
+                        success('Order placed successfully! Redirecting to confirmation...');
+                        setTimeout(() => {
+                            navigate('/order-success', { 
+                                state: { order: createdOrder },
+                                replace: true 
+                            });
+                        }, 1000);
+                    } else {
+                        // Order was not created, redirect to orders page to check
+                        error('Response format issue. Your order may have been placed. Redirecting to orders page to confirm...');
+                        setTimeout(() => {
+                            navigate('/orders');
+                        }, 2000);
+                    }
                     return;
                 } else {
-                    // For any other error, assume order might have been created and redirect to orders
-                    error(`Payment successful! Your order may have been placed. Redirecting to orders page to verify...`);
-                    setTimeout(() => {
-                        navigate('/orders');
-                    }, 3000);
+                    setIsProcessingOrder(false);
+                    error('An error occurred. Checking if your order was placed...');
+                    
+                    // Check if order was actually created despite error
+                    const createdOrder = await checkIfOrderWasCreated(paymentData.amount);
+                    
+                    if (createdOrder) {
+                        // Order was created! Redirect to success page
+                        console.log('✅ Order was created despite error. Redirecting to success page...');
+                        success('Order placed successfully! Redirecting to confirmation...');
+                        setTimeout(() => {
+                            navigate('/order-success', { 
+                                state: { order: createdOrder },
+                                replace: true 
+                            });
+                        }, 1000);
+                    } else {
+                        // Order was not created, redirect to orders page to check
+                        error(`An error occurred. Your order may have been placed. Redirecting to orders page to verify...`);
+                        setTimeout(() => {
+                            navigate('/orders');
+                        }, 2000);
+                    }
                     return;
                 }
             } else {
