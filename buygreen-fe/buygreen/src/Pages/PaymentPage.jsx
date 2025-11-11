@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useCart } from '../Hooks/UseCart';
 import { useToast } from '../Component/Toast';
-import api from '../api/axiosConfig';
 
 const PaymentPage = () => {
     const navigate = useNavigate();

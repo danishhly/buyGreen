@@ -605,15 +605,15 @@ const OrderList = () => {
             const response = await api.put(`/admin/orders/${orderId}/status`,
                 { status: newStatus },
                 {
-                    // FIX: Increase timeout from the default 30s to 60s
-                    timeout: 60000 // 60 second timeout for status update
+                    // Reduced timeout since email is now async and won't block
+                    timeout: 30000 // 30 second timeout for status update (email is async)
                 }
             );
 
             if (response.data && response.data.message) {
-                success(`Order #${orderId} status updated to ${newStatus}`);
+                success(`Order #${orderId} status updated to ${newStatus}. Email notification will be sent.`);
             } else {
-                success(`Order #${orderId} status updated to ${newStatus}`);
+                success(`Order #${orderId} status updated to ${newStatus}. Email notification will be sent.`);
             }
 
             setSelectedStatus({ ...selectedStatus, [orderId]: '' }); // Reset dropdown
