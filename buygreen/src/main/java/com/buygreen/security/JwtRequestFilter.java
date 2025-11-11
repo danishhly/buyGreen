@@ -29,6 +29,15 @@ public class JwtRequestFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
 
+        // Skip JWT processing for public endpoints
+        String path = request.getRequestURI();
+        if (path.equals("/login") || path.equals("/signup") || path.equals("/auth/google") 
+            || path.equals("/forgot-password") || path.equals("/reset-password")
+            || (path.startsWith("/products/") && "GET".equals(request.getMethod()))) {
+            chain.doFilter(request, response);
+            return;
+        }
+
         final String requestTokenHeader = request.getHeader("Authorization");
 
         String username = null;
@@ -40,31 +49,35 @@ public class JwtRequestFilter extends OncePerRequestFilter {
             try {
                 username = jwtUtil.getUsernameFromToken(jwtToken);
             } catch (IllegalArgumentException e) {
-                System.out.println("Unable to get JWT Token");
+                logger.warn("Unable to get JWT Token: " + e.getMessage());
             } catch (ExpiredJwtException e) {
-                System.out.println("JWT Token has expired");
+                logger.warn("JWT Token has expired");
+            } catch (Exception e) {
+                logger.warn("Error processing JWT token: " + e.getMessage());
             }
-        } else {
-            logger.warn("JWT Token does not begin with Bearer String");
         }
 
         // 2. Once we have the username, validate the token
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+            try {
+                UserDetails userDetails = this.customerService.loadUserByUsername(username);
 
-            UserDetails userDetails = this.customerService.loadUserByUsername(username);
+                // 3. If token is valid, configure Spring Security to manually set authentication
+                if (userDetails != null && jwtUtil.validateToken(jwtToken, (com.buygreen.model.Customers) userDetails)) {
 
-            // 3. If token is valid, configure Spring Security to manually set authentication
-            if (jwtUtil.validateToken(jwtToken, (com.buygreen.model.Customers) userDetails)) {
+                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                            userDetails, null, userDetails.getAuthorities());
 
-                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                        userDetails, null, userDetails.getAuthorities());
+                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
-                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-
-                // After setting the Authentication in the context, we specify
-                // that the current user is authenticated. So it passes the
-                // Spring Security Configurations successfully.
-                SecurityContextHolder.getContext().setAuthentication(authToken);
+                    // After setting the Authentication in the context, we specify
+                    // that the current user is authenticated. So it passes the
+                    // Spring Security Configurations successfully.
+                    SecurityContextHolder.getContext().setAuthentication(authToken);
+                }
+            } catch (Exception e) {
+                logger.warn("Error loading user details: " + e.getMessage());
+                // Continue filter chain even if user loading fails
             }
         }
 
