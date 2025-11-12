@@ -41,6 +41,10 @@ set MAIL_PORT=465
 set MAIL_USERNAME=your_email@gmail.com
 set MAIL_PASSWORD=your_email_app_password_here
 
+REM SendGrid Configuration (HTTP API fallback)
+set SENDGRID_API_KEY=your_sendgrid_api_key_here
+set EMAIL_SERVICE_MODE=sendgrid
+
 REM Frontend URL Configuration
 set FRONTEND_URL=http://localhost:5173
 set CORS_ALLOWED_ORIGINS=http://localhost:5173

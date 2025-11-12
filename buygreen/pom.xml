@@ -63,7 +63,6 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-mail</artifactId>
         </dependency>
-        <!-- SendGrid for email (HTTP API, no SMTP ports needed) -->
         <dependency>
             <groupId>com.sendgrid</groupId>
             <artifactId>sendgrid-java</artifactId>
@@ -82,6 +81,7 @@
             <artifactId>razorpay-java</artifactId>
             <version>1.4.3</version>
         </dependency>
+
 		<dependency>
 			<groupId>com.mysql</groupId>
 			<artifactId>mysql-connector-j</artifactId>

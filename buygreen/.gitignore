@@ -45,3 +45,4 @@ build/
 ### Local Configuration Files (contain secrets) ###
 start.bat
 start.sh
+start.local.bat
