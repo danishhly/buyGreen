@@ -31,7 +31,8 @@ public class JwtRequestFilter extends OncePerRequestFilter {
 
         // Skip JWT processing for public endpoints
         String path = request.getRequestURI();
-        if (path.equals("/login") || path.equals("/signup") || path.equals("/auth/google") 
+        if (path.equals("/") || path.equals("/health") || path.equals("/api/health")
+            || path.equals("/login") || path.equals("/signup") || path.equals("/auth/google") 
             || path.equals("/forgot-password") || path.equals("/reset-password")
             || (path.startsWith("/products/") && "GET".equals(request.getMethod()))) {
             chain.doFilter(request, response);

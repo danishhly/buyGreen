@@ -27,6 +27,10 @@ public class SecurityConfig {
 
                 // --- 2. CONFIGURE STRICTER RULES ---
                 .authorizeHttpRequests(auth -> auth
+                        // Health check endpoints (for monitoring services)
+                        .requestMatchers("/").permitAll()
+                        .requestMatchers("/health").permitAll()
+                        .requestMatchers("/api/health").permitAll()
                         // Public endpoints (no authentication needed)
                         .requestMatchers("/login").permitAll()
                         .requestMatchers("/signup").permitAll()
