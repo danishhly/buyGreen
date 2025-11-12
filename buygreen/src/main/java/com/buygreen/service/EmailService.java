@@ -42,6 +42,10 @@ public class EmailService {
     @Value("${sender.email:dnsh.1inn@gmail.com}")
     private String senderEmail;
 
+    // Admin email for order notifications
+    @Value("${admin.email:dnsh.1inn@gmail.com}")
+    private String adminEmail;
+
     @Value("${sendgrid.api.key:}")
     private String sendGridApiKey;
 
@@ -394,6 +398,119 @@ public class EmailService {
             logger.severe("Failed to send order status update email to " + toEmail + " for order #" + order.getId()
                     + ": " + e.getMessage());
             e.printStackTrace();
+        }
+    }
+
+    @Async("taskExecutor")
+    public void sendNewOrderNotificationToAdmin(Order order, String customerName, String customerEmail) {
+        try {
+            if (adminEmail == null || adminEmail.trim().isEmpty()) {
+                logger.warning("Admin email not configured. Skipping admin notification for order #" + order.getId());
+                return;
+            }
+
+            logger.info("Sending new order notification to admin: " + adminEmail + " for order #" + order.getId());
+            String subject = "New Order Received - Order #" + order.getId();
+
+            StringBuilder body = new StringBuilder();
+            body.append("Hello Admin,\n\n");
+            body.append("A new order has been placed on BuyGreen!\n\n");
+            body.append("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
+            body.append("ORDER DETAILS\n");
+            body.append("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
+            body.append("Order ID: #").append(order.getId()).append("\n");
+            body.append("Order Date: ")
+                    .append(order.getOrderDate().format(DateTimeFormatter.ofPattern("MMMM dd, yyyy 'at' hh:mm a")))
+                    .append("\n");
+            body.append("Status: ").append(order.getStatus()).append("\n");
+            body.append("Total Amount: ₹").append(order.getTotalAmount()).append("\n\n");
+
+            body.append("CUSTOMER INFORMATION\n");
+            body.append("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
+            body.append("Customer Name: ").append(customerName != null ? customerName : "N/A").append("\n");
+            body.append("Customer Email: ").append(customerEmail != null ? customerEmail : "N/A").append("\n\n");
+
+            // Build complete address
+            StringBuilder fullAddress = new StringBuilder();
+            if (order.getStreet() != null && !order.getStreet().isEmpty()) {
+                fullAddress.append(order.getStreet());
+            }
+            if (order.getCity() != null && !order.getCity().isEmpty()) {
+                if (fullAddress.length() > 0)
+                    fullAddress.append(", ");
+                fullAddress.append(order.getCity());
+            }
+            if (order.getState() != null && !order.getState().isEmpty()) {
+                if (fullAddress.length() > 0)
+                    fullAddress.append(", ");
+                fullAddress.append(order.getState());
+            }
+            if (order.getPincode() != null && !order.getPincode().isEmpty()) {
+                if (fullAddress.length() > 0)
+                    fullAddress.append(" - ");
+                fullAddress.append(order.getPincode());
+            }
+            if (order.getCountry() != null && !order.getCountry().isEmpty()) {
+                if (fullAddress.length() > 0)
+                    fullAddress.append(", ");
+                fullAddress.append(order.getCountry());
+            }
+
+            if (fullAddress.length() > 0) {
+                body.append("DELIVERY ADDRESS\n");
+                body.append("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
+                body.append(fullAddress.toString()).append("\n");
+                if (order.getLocation() != null && !order.getLocation().isEmpty()) {
+                    body.append("Location/Landmark: ").append(order.getLocation()).append("\n");
+                }
+                body.append("\n");
+            }
+
+            if (order.getShippingAddress() != null && !order.getShippingAddress().isEmpty()) {
+                body.append("SHIPPING ADDRESS\n");
+                body.append("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
+                body.append(order.getShippingAddress()).append("\n\n");
+            }
+
+            body.append("ORDER ITEMS\n");
+            body.append("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
+            if (order.getItems() != null && !order.getItems().isEmpty()) {
+                int itemNumber = 1;
+                for (var item : order.getItems()) {
+                    body.append(itemNumber++).append(". ").append(item.getProductName())
+                            .append("\n   Quantity: ").append(item.getQuantity())
+                            .append("\n   Price: ₹").append(item.getPrice())
+                            .append("\n   Subtotal: ₹")
+                            .append(item.getPrice().multiply(java.math.BigDecimal.valueOf(item.getQuantity())))
+                            .append("\n\n");
+                }
+            } else {
+                body.append("No items found in order.\n\n");
+            }
+
+            if (order.getCouponCode() != null && !order.getCouponCode().isEmpty()) {
+                body.append("COUPON APPLIED\n");
+                body.append("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
+                body.append("Coupon Code: ").append(order.getCouponCode()).append("\n");
+                if (order.getDiscountAmount() != null) {
+                    body.append("Discount Amount: ₹").append(order.getDiscountAmount()).append("\n");
+                }
+                body.append("\n");
+            }
+
+            body.append("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
+            body.append("Please process this order and update its status in the admin dashboard.\n\n");
+            body.append("Admin Dashboard: ").append(frontendUrl).append("/admin/dashboard\n\n");
+            body.append("This is an automated notification from BuyGreen.\n");
+
+            sendEmail(adminEmail, subject, body.toString());
+            logger.info("New order notification sent successfully to admin: " + adminEmail + " for order #"
+                    + order.getId());
+        } catch (Exception e) {
+            logger.severe("Failed to send new order notification to admin for order #" + order.getId() + ": "
+                    + e.getMessage());
+            e.printStackTrace();
+            // Don't throw - admin notification failure shouldn't break order creation
         }
     }
 }

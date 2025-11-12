@@ -138,7 +138,7 @@ public class OrderService {
         // Clear cart after successful order
         cartRepository.deleteByCustomerId(orderRequest.getCustomerId());
 
-        // Send order confirmation email asynchronously (non-blocking)
+        // Send order confirmation email to customer asynchronously (non-blocking)
         try {
             var customer = customerService.getCustomerById(orderRequest.getCustomerId());
             if (customer != null && customer.getEmail() != null) {
@@ -147,6 +147,13 @@ public class OrderService {
                     customer.getEmail(),
                     savedOrder,
                     customer.getName()
+                );
+                
+                // Send admin notification email asynchronously (non-blocking)
+                emailService.sendNewOrderNotificationToAdmin(
+                    savedOrder,
+                    customer.getName(),
+                    customer.getEmail()
                 );
             }
         } catch (Exception e) {
