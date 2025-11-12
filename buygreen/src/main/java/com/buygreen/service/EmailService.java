@@ -83,7 +83,7 @@ public class EmailService {
         System.out.println("Sending email via SendGrid API to: " + toEmail);
         // CRITICAL FIX: Use senderEmail (verified address) for the From field
         // Note: The logic in the controller ensures senderEmail is set via @Value("${sender.email}")
-        Email from = new Email(senderEmail != null && !senderEmail.isEmpty() ? senderEmail : "noreply@buygreen.com");
+        Email from = new Email(senderEmail);
         Email to = new Email(toEmail);
         Content content = new Content("text/plain", body);
         Mail mail = new Mail(from, subject, to, content);
