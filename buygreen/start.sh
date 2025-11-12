@@ -8,9 +8,9 @@
 
 # Database Configuration
 # ⚠️ IMPORTANT: Replace 'your_password_here' with your actual MySQL password
-export DB_URL=jdbc:mysql://localhost:3306/buygreen_db
-export DB_USERNAME=root
-export DB_PASSWORD=0598
+export DB_URL=you sql URL
+export DB_USERNAME=name
+export DB_PASSWORD=password
 
 # JPA Configuration
 export JPA_DDL_AUTO=update
@@ -28,13 +28,13 @@ export GOOGLE_CLIENT_ID=your_google_client_id
 
 # Email Configuration
 export MAIL_HOST=smtp.gmail.com
-export MAIL_PORT=465
+export MAIL_PORT=port number
 export MAIL_USERNAME=your_email@gmail.com
 export MAIL_PASSWORD=your_email_app_password
 
 # Frontend URL Configuration
-export FRONTEND_URL=http://localhost:5173
-export CORS_ALLOWED_ORIGINS=http://localhost:5173
+export FRONTEND_URL=URL
+export CORS_ALLOWED_ORIGINS=same url as a frontend
 
 # ============================================
 # Start the application
