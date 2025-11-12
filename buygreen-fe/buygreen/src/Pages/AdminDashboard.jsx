@@ -605,15 +605,14 @@ const OrderList = () => {
             const response = await api.put(`/admin/orders/${orderId}/status`,
                 { status: newStatus },
                 {
-                    // Reduced timeout since email is now async and won't block
-                    timeout: 30000 // 30 second timeout for status update (email is async)
+                    timeout: 60000 // 30 second timeout
                 }
             );
 
             if (response.data && response.data.message) {
-                success(`Order #${orderId} status updated to ${newStatus}. Email notification will be sent.`);
+                success(`Order #${orderId} status updated to ${newStatus}`);
             } else {
-                success(`Order #${orderId} status updated to ${newStatus}. Email notification will be sent.`);
+                success(`Order #${orderId} status updated to ${newStatus}`);
             }
 
             setSelectedStatus({ ...selectedStatus, [orderId]: '' }); // Reset dropdown
@@ -624,17 +623,11 @@ const OrderList = () => {
                 message: err.message,
                 response: err.response?.data,
                 status: err.response?.status,
-                url: `/admin/orders/${orderId}/status`,
-                code: err.code,
-                timeout: err.code === 'ECONNABORTED' || err.message?.includes('timeout')
+                url: `/admin/orders/${orderId}/status`
             });
 
             // Provide more specific error messages
-            if (err.code === 'ECONNABORTED' || err.message?.includes('timeout')) {
-                error("Request timed out. The order status may have been updated. Please refresh the page to check.");
-                // Refresh orders to check if status was actually updated
-                await fetchOrders(currentPage);
-            } else if (err.response?.status === 403) {
+            if (err.response?.status === 403) {
                 error("Access denied. You do not have permission to update order status.");
             } else if (err.response?.status === 401) {
                 error("Session expired. Please login again.");
