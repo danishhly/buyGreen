@@ -112,12 +112,25 @@ public class EmailService {
         }
 
         System.out.println("Sending email via SMTP to: " + toEmail);
+        
+        // Log SMTP configuration for debugging (without exposing password)
+        if (mailSender instanceof org.springframework.mail.javamail.JavaMailSenderImpl impl) {
+            System.out.println("SMTP Configuration:");
+            System.out.println("  Host: " + impl.getHost());
+            System.out.println("  Port: " + impl.getPort());
+            System.out.println("  Username: " + impl.getUsername());
+            System.out.println("  Password: " + (impl.getPassword() != null && !impl.getPassword().isEmpty() ? "SET (" + impl.getPassword().length() + " chars)" : "NOT SET"));
+        }
+        
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(toEmail);
         message.setSubject(subject);
         message.setText(body);
         if (fromEmail != null && !fromEmail.isEmpty()) {
             message.setFrom(fromEmail);
+        } else {
+            // For SendGrid, use a verified sender email
+            message.setFrom("dnsh.1inn@gmail.com");
         }
 
         mailSender.send(message);
