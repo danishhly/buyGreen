@@ -12,9 +12,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import jakarta.mail.internet.MimeMessage;
+import jakarta.mail.internet.InternetAddress;
 import java.time.format.DateTimeFormatter;
 import java.util.logging.Logger;
 
@@ -29,12 +32,14 @@ public class EmailService {
     @Value("${frontend.url:http://localhost:5173}")
     private String frontendUrl;
 
-    // RETAIN: This is the MAIL_USERNAME (used only for authentication, e.g., 'apikey').
+    // RETAIN: This is the MAIL_USERNAME (used only for authentication, e.g.,
+    // 'apikey').
     @Value("${spring.mail.username:}")
     private String fromEmail;
 
-    // ADDED: This is the verified address shown to the customer (e.g., 'support@buygreen.com').
-    @Value("${sender.email}")
+    // ADDED: This is the verified address shown to the customer (e.g.,
+    // 'support@buygreen.com').
+    @Value("${sender.email:dnsh.1inn@gmail.com}")
     private String senderEmail;
 
     @Value("${sendgrid.api.key:}")
@@ -50,15 +55,18 @@ public class EmailService {
 
         if ("sendgrid".equalsIgnoreCase(emailServiceMode)) {
             System.out.println("Using SendGrid API for emails");
-            System.out.println("SendGrid API Key: " + (sendGridApiKey != null && !sendGridApiKey.isEmpty() ? "SET" : "NOT SET"));
+            System.out.println(
+                    "SendGrid API Key: " + (sendGridApiKey != null && !sendGridApiKey.isEmpty() ? "SET" : "NOT SET"));
             if (sendGridApiKey == null || sendGridApiKey.isEmpty()) {
                 System.err.println("WARNING: SendGrid API key not set! Set SENDGRID_API_KEY environment variable.");
             }
         } else {
             System.out.println("Using SMTP for emails (mode: " + emailServiceMode + ")");
             System.out.println("Mail Sender: " + (mailSender != null ? "INITIALIZED" : "NULL"));
-            System.out.println("From Email (Auth): " + (fromEmail != null && !fromEmail.isEmpty() ? fromEmail : "NOT SET"));
-            System.out.println("Sender Email (Display): " + (senderEmail != null && !senderEmail.isEmpty() ? senderEmail : "NOT SET"));
+            System.out.println(
+                    "From Email (Auth): " + (fromEmail != null && !fromEmail.isEmpty() ? fromEmail : "NOT SET"));
+            System.out.println("Sender Email (Display): "
+                    + (senderEmail != null && !senderEmail.isEmpty() ? senderEmail : "NOT SET"));
 
             if (mailSender instanceof org.springframework.mail.javamail.JavaMailSenderImpl impl) {
                 System.out.println("SMTP Host: " + impl.getHost());
@@ -77,12 +85,14 @@ public class EmailService {
 
     private void sendViaSendGrid(String toEmail, String subject, String body) throws Exception {
         if (sendGridApiKey == null || sendGridApiKey.isEmpty()) {
-            throw new IllegalStateException("SendGrid API key is not configured. Set SENDGRID_API_KEY environment variable.");
+            throw new IllegalStateException(
+                    "SendGrid API key is not configured. Set SENDGRID_API_KEY environment variable.");
         }
 
         System.out.println("Sending email via SendGrid API to: " + toEmail);
         // CRITICAL FIX: Use senderEmail (verified address) for the From field
-        // Note: The logic in the controller ensures senderEmail is set via @Value("${sender.email}")
+        // Note: The logic in the controller ensures senderEmail is set via
+        // @Value("${sender.email}")
         Email from = new Email(senderEmail);
         Email to = new Email(toEmail);
         Content content = new Content("text/plain", body);
@@ -105,7 +115,8 @@ public class EmailService {
             } else {
                 System.err.println("SendGrid API Error: Status " + response.getStatusCode());
                 System.err.println("Response Body: " + response.getBody());
-                throw new Exception("SendGrid API returned status " + response.getStatusCode() + ": " + response.getBody());
+                throw new Exception(
+                        "SendGrid API returned status " + response.getStatusCode() + ": " + response.getBody());
             }
         } catch (Exception ex) {
             System.err.println("SendGrid API Error: " + ex.getMessage());
@@ -127,27 +138,83 @@ public class EmailService {
             System.out.println("  Host: " + impl.getHost());
             System.out.println("  Port: " + impl.getPort());
             System.out.println("  Username: " + impl.getUsername());
-            System.out.println("  Password: " + (impl.getPassword() != null && !impl.getPassword().isEmpty() ? "SET (" + impl.getPassword().length() + " chars)" : "NOT SET"));
+            System.out.println("  Password: " + (impl.getPassword() != null && !impl.getPassword().isEmpty()
+                    ? "SET (" + impl.getPassword().length() + " chars)"
+                    : "NOT SET"));
         }
 
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setTo(toEmail);
-        message.setSubject(subject);
-        message.setText(body);
+        // Use MimeMessage for better deliverability (proper headers, HTML support)
+        MimeMessage mimeMessage = mailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
 
-        // CRITICAL FIX: Use senderEmail (verified address) for the From field
-        if (senderEmail != null && !senderEmail.isEmpty()) {
-            message.setFrom(senderEmail);
-        } else if (fromEmail != null && !fromEmail.isEmpty()) {
-            // Fallback for older code version, should now be senderEmail
-            message.setFrom(fromEmail);
-        } else {
-            // Last resort fallback
-            message.setFrom("noreply@buygreen.com");
-        }
+        // Set recipient
+        helper.setTo(toEmail);
 
-        mailSender.send(message);
+        // Set subject
+        helper.setSubject(subject);
+
+        // Set from address with proper name (improves deliverability)
+        String fromAddress = (senderEmail != null && !senderEmail.isEmpty())
+                ? senderEmail
+                : ((fromEmail != null && !fromEmail.isEmpty()) ? fromEmail : "dnsh.1inn@gmail.com");
+        helper.setFrom(new InternetAddress(fromAddress, "BuyGreen", "UTF-8"));
+
+        // Set reply-to address
+        helper.setReplyTo(new InternetAddress(fromAddress, "BuyGreen Support", "UTF-8"));
+
+        // Convert plain text to HTML for better formatting (helps deliverability)
+        String htmlBody = convertToHtml(body);
+        helper.setText(htmlBody, true); // true = HTML content
+
+        // Add important headers to improve deliverability
+        mimeMessage.setHeader("X-Mailer", "BuyGreen E-Commerce Platform");
+        mimeMessage.setHeader("X-Priority", "3"); // Normal priority
+        mimeMessage.setHeader("List-Unsubscribe", "<mailto:" + fromAddress + "?subject=unsubscribe>");
+        mimeMessage.setHeader("List-Unsubscribe-Post", "List-Unsubscribe=One-Click");
+
+        mailSender.send(mimeMessage);
         System.out.println("=== EMAIL SENT SUCCESSFULLY VIA SMTP ===");
+    }
+
+    /**
+     * Convert plain text email to simple HTML for better deliverability
+     */
+    private String convertToHtml(String plainText) {
+        if (plainText == null || plainText.isEmpty()) {
+            return "";
+        }
+
+        // Escape HTML special characters
+        String escaped = plainText
+                .replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;");
+
+        // Convert line breaks to <br> tags
+        String html = escaped.replace("\n", "<br>");
+
+        // Wrap in basic HTML structure with styling
+        return "<!DOCTYPE html>" +
+                "<html>" +
+                "<head>" +
+                "<meta charset=\"UTF-8\">" +
+                "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">" +
+                "<style>" +
+                "body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }"
+                +
+                "h1, h2 { color: #2d5016; }" +
+                ".footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; font-size: 12px; color: #666; }"
+                +
+                "</style>" +
+                "</head>" +
+                "<body>" +
+                html +
+                "<div class=\"footer\">" +
+                "<p>Thank you for choosing BuyGreen!</p>" +
+                "<p>This is an automated email. Please do not reply directly to this message.</p>" +
+                "</div>" +
+                "</body>" +
+                "</html>";
     }
 
     private void sendEmail(String toEmail, String subject, String body) throws Exception {
@@ -168,7 +235,8 @@ public class EmailService {
                         System.out.println("Successfully sent via SendGrid after SMTP failure");
                     } catch (Exception sendGridError) {
                         System.err.println("SendGrid also failed: " + sendGridError.getMessage());
-                        throw new Exception("Both SMTP and SendGrid failed. SMTP: " + smtpError.getMessage() + ", SendGrid: " + sendGridError.getMessage());
+                        throw new Exception("Both SMTP and SendGrid failed. SMTP: " + smtpError.getMessage()
+                                + ", SendGrid: " + sendGridError.getMessage());
                     }
                 } else {
                     throw smtpError;
@@ -207,7 +275,9 @@ public class EmailService {
             body.append("Order Details:\n");
             body.append("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
             body.append("Order ID: #").append(order.getId()).append("\n");
-            body.append("Order Date: ").append(order.getOrderDate().format(DateTimeFormatter.ofPattern("MMMM dd, yyyy 'at' hh:mm a"))).append("\n");
+            body.append("Order Date: ")
+                    .append(order.getOrderDate().format(DateTimeFormatter.ofPattern("MMMM dd, yyyy 'at' hh:mm a")))
+                    .append("\n");
             body.append("Status: ").append(order.getStatus()).append("\n");
             body.append("Total Amount: ₹").append(order.getTotalAmount()).append("\n\n");
 
@@ -221,19 +291,23 @@ public class EmailService {
                 fullAddress.append(order.getStreet());
             }
             if (order.getCity() != null && !order.getCity().isEmpty()) {
-                if (fullAddress.length() > 0) fullAddress.append(", ");
+                if (fullAddress.length() > 0)
+                    fullAddress.append(", ");
                 fullAddress.append(order.getCity());
             }
             if (order.getState() != null && !order.getState().isEmpty()) {
-                if (fullAddress.length() > 0) fullAddress.append(", ");
+                if (fullAddress.length() > 0)
+                    fullAddress.append(", ");
                 fullAddress.append(order.getState());
             }
             if (order.getPincode() != null && !order.getPincode().isEmpty()) {
-                if (fullAddress.length() > 0) fullAddress.append(" - ");
+                if (fullAddress.length() > 0)
+                    fullAddress.append(" - ");
                 fullAddress.append(order.getPincode());
             }
             if (order.getCountry() != null && !order.getCountry().isEmpty()) {
-                if (fullAddress.length() > 0) fullAddress.append(", ");
+                if (fullAddress.length() > 0)
+                    fullAddress.append(", ");
                 fullAddress.append(order.getCountry());
             }
 
@@ -268,7 +342,8 @@ public class EmailService {
             sendEmail(toEmail, subject, body.toString());
             logger.info("Order confirmation email sent successfully to: " + toEmail + " for order #" + order.getId());
         } catch (Exception e) {
-            logger.severe("Failed to send order confirmation email to " + toEmail + " for order #" + order.getId() + ": " + e.getMessage());
+            logger.severe("Failed to send order confirmation email to " + toEmail + " for order #" + order.getId()
+                    + ": " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -284,7 +359,8 @@ public class EmailService {
             System.out.println("Sender Email (Display): " + (senderEmail != null ? senderEmail : "NOT SET"));
             System.out.println("Mail Sender: " + (mailSender != null ? "INITIALIZED" : "NULL"));
 
-            logger.info("Sending order status update email to: " + toEmail + " for order #" + order.getId() + " with status: " + order.getStatus());
+            logger.info("Sending order status update email to: " + toEmail + " for order #" + order.getId()
+                    + " with status: " + order.getStatus());
 
             String subject = "Order Update - Order #" + order.getId();
 
@@ -315,7 +391,8 @@ public class EmailService {
             System.err.println("=== EMAIL SEND FAILED ===");
             System.err.println("Error: " + e.getMessage());
             System.err.println("Error Class: " + e.getClass().getName());
-            logger.severe("Failed to send order status update email to " + toEmail + " for order #" + order.getId() + ": " + e.getMessage());
+            logger.severe("Failed to send order status update email to " + toEmail + " for order #" + order.getId()
+                    + ": " + e.getMessage());
             e.printStackTrace();
         }
     }
