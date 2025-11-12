@@ -29,8 +29,13 @@ public class EmailService {
     @Value("${frontend.url:http://localhost:5173}")
     private String frontendUrl;
 
+    // RETAIN: This is the MAIL_USERNAME (used only for authentication, e.g., 'apikey').
     @Value("${spring.mail.username:}")
     private String fromEmail;
+
+    // ADDED: This is the verified address shown to the customer (e.g., 'support@buygreen.com').
+    @Value("${sender.email}")
+    private String senderEmail;
 
     @Value("${sendgrid.api.key:}")
     private String sendGridApiKey;
@@ -52,7 +57,8 @@ public class EmailService {
         } else {
             System.out.println("Using SMTP for emails (mode: " + emailServiceMode + ")");
             System.out.println("Mail Sender: " + (mailSender != null ? "INITIALIZED" : "NULL"));
-            System.out.println("From Email: " + (fromEmail != null && !fromEmail.isEmpty() ? fromEmail : "NOT SET"));
+            System.out.println("From Email (Auth): " + (fromEmail != null && !fromEmail.isEmpty() ? fromEmail : "NOT SET"));
+            System.out.println("Sender Email (Display): " + (senderEmail != null && !senderEmail.isEmpty() ? senderEmail : "NOT SET"));
 
             if (mailSender instanceof org.springframework.mail.javamail.JavaMailSenderImpl impl) {
                 System.out.println("SMTP Host: " + impl.getHost());
@@ -75,7 +81,9 @@ public class EmailService {
         }
 
         System.out.println("Sending email via SendGrid API to: " + toEmail);
-        Email from = new Email(fromEmail != null && !fromEmail.isEmpty() ? fromEmail : "noreply@buygreen.com");
+        // CRITICAL FIX: Use senderEmail (verified address) for the From field
+        // Note: The logic in the controller ensures senderEmail is set via @Value("${sender.email}")
+        Email from = new Email(senderEmail != null && !senderEmail.isEmpty() ? senderEmail : "noreply@buygreen.com");
         Email to = new Email(toEmail);
         Content content = new Content("text/plain", body);
         Mail mail = new Mail(from, subject, to, content);
@@ -112,7 +120,7 @@ public class EmailService {
         }
 
         System.out.println("Sending email via SMTP to: " + toEmail);
-        
+
         // Log SMTP configuration for debugging (without exposing password)
         if (mailSender instanceof org.springframework.mail.javamail.JavaMailSenderImpl impl) {
             System.out.println("SMTP Configuration:");
@@ -121,16 +129,21 @@ public class EmailService {
             System.out.println("  Username: " + impl.getUsername());
             System.out.println("  Password: " + (impl.getPassword() != null && !impl.getPassword().isEmpty() ? "SET (" + impl.getPassword().length() + " chars)" : "NOT SET"));
         }
-        
+
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(toEmail);
         message.setSubject(subject);
         message.setText(body);
-        if (fromEmail != null && !fromEmail.isEmpty()) {
+
+        // CRITICAL FIX: Use senderEmail (verified address) for the From field
+        if (senderEmail != null && !senderEmail.isEmpty()) {
+            message.setFrom(senderEmail);
+        } else if (fromEmail != null && !fromEmail.isEmpty()) {
+            // Fallback for older code version, should now be senderEmail
             message.setFrom(fromEmail);
         } else {
-            // For SendGrid, use a verified sender email
-            message.setFrom("dnsh.1inn@gmail.com");
+            // Last resort fallback
+            message.setFrom("noreply@buygreen.com");
         }
 
         mailSender.send(message);
@@ -249,7 +262,7 @@ public class EmailService {
             body.append("We'll send you another email when your order ships.\n\n");
             body.append("Thank you for choosing buygreen.!\n");
             body.append("If you have any questions, please contact us at ")
-                    .append(fromEmail != null && !fromEmail.isEmpty() ? fromEmail : "support@buygreen.com")
+                    .append(senderEmail != null && !senderEmail.isEmpty() ? senderEmail : "support@buygreen.com")
                     .append("\n");
 
             sendEmail(toEmail, subject, body.toString());
@@ -267,7 +280,8 @@ public class EmailService {
             System.out.println("To: " + toEmail);
             System.out.println("Order ID: " + order.getId());
             System.out.println("Status: " + order.getStatus());
-            System.out.println("From Email: " + (fromEmail != null ? fromEmail : "NOT SET"));
+            System.out.println("From Email (Auth): " + (fromEmail != null ? fromEmail : "NOT SET"));
+            System.out.println("Sender Email (Display): " + (senderEmail != null ? senderEmail : "NOT SET"));
             System.out.println("Mail Sender: " + (mailSender != null ? "INITIALIZED" : "NULL"));
 
             logger.info("Sending order status update email to: " + toEmail + " for order #" + order.getId() + " with status: " + order.getStatus());
@@ -292,7 +306,7 @@ public class EmailService {
 
             body.append("Thank you for shopping with buygreen.!\n");
             body.append("If you have any questions, please contact us at ")
-                    .append(fromEmail != null && !fromEmail.isEmpty() ? fromEmail : "support@buygreen.com")
+                    .append(senderEmail != null && !senderEmail.isEmpty() ? senderEmail : "support@buygreen.com")
                     .append("\n");
 
             sendEmail(toEmail, subject, body.toString());
